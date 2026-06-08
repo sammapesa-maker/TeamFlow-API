@@ -5,7 +5,7 @@ Work-in-progress backend project for team collaboration and task management.
 ## Tech Stack
 
 - FastAPI
-- PostgreSQL
+- PostgreSQL / Mysql for testing
 - SQLAlchemy
 - Alembic
 - Docker (planned)
