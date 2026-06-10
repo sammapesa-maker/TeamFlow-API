@@ -1,10 +1,18 @@
 from fastapi import FastAPI
+from app.api.v1.router import v1_router
 
-app = FastAPI()
+app = FastAPI(
+    title="My Versioned API",
+    version="1.0.0"
+)
 
+# Root/Health check endpoint
 @app.get("/")
-async def root():
-    return {"message": "Hello World"}
+def root():
+    return {"status": "healthy"}
+
+# Global prefix for all v1 routes
+app.include_router(v1_router, prefix="/api/v1")
 
 
 if __name__ == "__main__":
