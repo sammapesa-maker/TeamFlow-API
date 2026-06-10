@@ -25,7 +25,7 @@ A backend system where:
 
 ---
 
-### 1. **Register User** (INCOMPLETE)
+### 1. **Register User** (COMPLETE)
 
 - Receive email and password from the user
 - Check if the email already exists in the system
@@ -39,8 +39,6 @@ A backend system where:
   - Save the user in the database
 
 - Return success confirming account creation
-
-> To implement password strength validation
 
 ---
 
