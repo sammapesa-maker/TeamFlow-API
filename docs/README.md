@@ -42,7 +42,7 @@ A backend system where:
 
 ---
 
-### 2. **Login User** (INCOMPLETE)
+### 2. **Login User** (COMPLETE)
 
 - Receive email and password
 - Find a user with the given email
@@ -61,8 +61,6 @@ A backend system where:
   - Generate an access token (short-lived)
   - Generate a refresh token (long-lived)
   - Return both tokens to the user
-
-> To implement generating the tokens
 
 ---
 
@@ -106,7 +104,7 @@ A backend system where:
 
 ---
 
-### 5. **Refresh Access Token**
+### 5. **Refresh Access Token** (COMPLETE)
 
 - Receive refresh token
 - Check if token is present
@@ -121,8 +119,8 @@ A backend system where:
 
 - If valid:
   - Extract user identity
-  - Generate a new access token
-  - Return new access token
+  - Generate a new access and refresh tokens
+  - Return new tokens
 
 ---
 
@@ -146,6 +144,9 @@ Only allow the request if all checks pass
 - Token → proves identity
 - Protected routes → require valid token
 - Refresh → issue new access token without login
+- Logout → revoke access
+
+> TASK: how to also disable access tokens in logout.
 
 ---
 
