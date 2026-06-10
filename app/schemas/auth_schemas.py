@@ -30,3 +30,10 @@ class UserResponse(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: SecretStr
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    
+class RefreshIn(BaseModel):
+    token: str
