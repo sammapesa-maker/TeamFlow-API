@@ -25,7 +25,7 @@ A backend system where:
 
 ---
 
-### 1. **Register User**
+### 1. **Register User** (INCOMPLETE)
 
 - Receive email and password from the user
 - Check if the email already exists in the system
@@ -40,9 +40,11 @@ A backend system where:
 
 - Return success confirming account creation
 
+> To implement password strength validation
+
 ---
 
-### 2. **Login User**
+### 2. **Login User** (INCOMPLETE)
 
 - Receive email and password
 - Find a user with the given email
@@ -61,6 +63,8 @@ A backend system where:
   - Generate an access token (short-lived)
   - Generate a refresh token (long-lived)
   - Return both tokens to the user
+
+> To implement generating the tokens
 
 ---
 
