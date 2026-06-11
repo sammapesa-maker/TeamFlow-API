@@ -5,7 +5,7 @@ from pydantic import SecretStr
 from app.schemas.auth_schemas import UserRegister, UserLogin
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
 from datetime import datetime, timedelta, timezone
-from app.repositories.user_repository import create_user, get_user_by_email
+from app.repositories.user_repository import create_user, get_user_by_email, get_user_by_username
 from app.core.config import get_settings
 from jose import JWTError, jwt
 from app.core.security import verify_token
@@ -18,13 +18,13 @@ ALGORITHM = settings.ALGORITHM
 
 def register_user(user_data: UserRegister, db: Session):
     # Check if user already exists
-    if get_user_by_email(user_data.email, db):
+    if get_user_by_email(user_data.email, db) or get_user_by_username(user_data.username, db):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists"
         )
 
     try:
-        user = create_user(user_data.email, hash_password(user_data.password.get_secret_value()), db)
+        user = create_user(user_data.email, user_data.username, hash_password(user_data.password.get_secret_value()), db)
         return user
 
     except Exception as e:  # Any unhandled exceptions during user creation
@@ -36,7 +36,13 @@ def register_user(user_data: UserRegister, db: Session):
 
 
 def login_user(user_data: UserLogin, db: Session):
-    user = get_user_by_email(user_data.email, db)
+    
+    # check if identifier is email or username
+    if "@" in user_data.identifier:
+        user = get_user_by_email(user_data.identifier, db)
+    else:        
+        user = get_user_by_username(user_data.identifier, db)
+        
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
@@ -108,7 +114,7 @@ def logout(token: str, db: Session):
     return {"message": "Logged out"}
 
 def login_form(form_data: OAuth2PasswordRequestForm, db: Session):
-    email = form_data.username
+    username = form_data.username
     password = form_data.password
-    user_data = UserLogin(email=email, password=SecretStr(password))
+    user_data = UserLogin(identifier=username, password=SecretStr(password))
     return login_user(user_data, db)
