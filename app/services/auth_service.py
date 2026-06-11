@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import SecretStr
 from app.schemas.auth_schemas import UserRegister, UserLogin
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
 from datetime import datetime, timedelta, timezone
@@ -104,3 +106,9 @@ def logout(token: str, db: Session):
     revoke_refresh_token(jti, db)
 
     return {"message": "Logged out"}
+
+def login_form(form_data: OAuth2PasswordRequestForm, db: Session):
+    email = form_data.username
+    password = form_data.password
+    user_data = UserLogin(email=email, password=SecretStr(password))
+    return login_user(user_data, db)

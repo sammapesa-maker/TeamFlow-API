@@ -10,3 +10,8 @@ def create_user(email:str, hashed_password: str, db: Session):
 
 def get_user_by_email(email: str, db: Session):
     return db.query(User).filter(User.email == email).first()
+
+def get_user_by_id(db: Session, user_id: int):
+    return db.query(User).filter(User.id == user_id).first()
+
+# to implement all other repositories operations
