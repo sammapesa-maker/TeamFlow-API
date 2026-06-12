@@ -15,7 +15,7 @@ from app.repositories.user import (
     get_user_by_email,
     get_user_by_username,
 )
-from app.core.config import get_settings
+from app.core.config import get_settings, Settings
 from jose import JWTError, jwt
 from app.core.security import verify_token
 from app.repositories.token import (
@@ -24,14 +24,14 @@ from app.repositories.token import (
     create_refresh_token_entry,
 )
 
-settings = get_settings()
-SECRET_KEY = settings.SECRET_KEY
-ALGORITHM = settings.ALGORITHM
+settings: Settings = get_settings()
+SECRET_KEY: str = settings.SECRET_KEY
+ALGORITHM: str = settings.ALGORITHM
 
 
 def register_user(user_data: UserRegister, db: Session):
     # Check if user already exists
-    if get_user_by_email(user_data.email, db) or get_user_by_username(
+    if get_user_by_email(email=user_data.email, db=db) or get_user_by_username(
         user_data.username, db
     ):
         raise HTTPException(
@@ -40,10 +40,10 @@ def register_user(user_data: UserRegister, db: Session):
 
     try:
         user = create_user(
-            user_data.email,
-            user_data.username,
-            hash_password(user_data.password.get_secret_value()),
-            db,
+            email=user_data.email,
+            username=user_data.username,
+            hashed_password=hash_password(user_data.password.get_secret_value()),
+            db=db,
         )
         return user
 
@@ -59,9 +59,9 @@ def login_user(user_data: UserLogin, db: Session):
 
     # check if identifier is email or username
     if "@" in user_data.identifier:
-        user = get_user_by_email(user_data.identifier, db)
+        user = get_user_by_email(email=user_data.identifier, db=db)
     else:
-        user = get_user_by_username(user_data.identifier, db)
+        user = get_user_by_username(username=user_data.identifier, db=db)
 
     if not user:
         raise HTTPException(
@@ -69,16 +69,16 @@ def login_user(user_data: UserLogin, db: Session):
         )
 
     # Verify password
-    if not verify_password(user_data.password.get_secret_value(), user.hashed_password):
+    if not verify_password(plain_password=user_data.password.get_secret_value(), hashed_password=user.hashed_password):  # ty:ignore[invalid-argument-type]
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
         )
 
-    access_token = create_access_token(user.id)
-    refresh_token, jti = create_refresh_token(user.id)
+    access_token = create_access_token(user_id=user.id)  # ty:ignore[invalid-argument-type]
+    refresh_token, jti = create_refresh_token(user_id=user.id)  # ty:ignore[invalid-argument-type]
 
     create_refresh_token_entry(
-        user.id, refresh_token, jti, datetime.now(timezone.utc) + timedelta(days=7), db
+        user_id=user.id, token=refresh_token, jti=jti, expires_at=datetime.now(timezone.utc) + timedelta(days=7), db=db  # ty:ignore[invalid-argument-type]
     )
 
     return {"access_token": access_token, "refresh_token": refresh_token}
@@ -86,7 +86,7 @@ def login_user(user_data: UserLogin, db: Session):
 
 def refresh_token(token: str, db: Session):
     try:
-        payload = jwt.decode(str(token), SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token=str(token), key=SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError as e:
         print(f"Error : {e}")
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -105,7 +105,7 @@ def refresh_token(token: str, db: Session):
     if db_token.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
         raise HTTPException(status_code=401, detail="Token expired")
 
-    if not verify_token(token, db_token.token_hash):
+    if not verify_token(token=token, hashed=db_token.token_hash):
         raise HTTPException(status_code=401, detail="Token mismatch")
 
     # ROTATION: revoke old token
@@ -116,11 +116,11 @@ def refresh_token(token: str, db: Session):
     new_refresh_token, new_jti = create_refresh_token(user_id)
 
     create_refresh_token_entry(
-        user_id,
-        new_refresh_token,
-        new_jti,
-        datetime.now(timezone.utc) + timedelta(days=7),
-        db,
+        user_id=user_id,
+        token=new_refresh_token,
+        jti=new_jti,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        db=db,
     )
 
     return {"access_token": access_token, "refresh_token": new_refresh_token}
@@ -128,7 +128,7 @@ def refresh_token(token: str, db: Session):
 
 def logout(token: str, db: Session):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token=token, key=SECRET_KEY, algorithms=[ALGORITHM])
         jti = payload.get("jti")
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -141,8 +141,8 @@ def logout(token: str, db: Session):
 def login_form(form_data: OAuth2PasswordRequestForm, db: Session):
     username = form_data.username
     password = form_data.password
-    user_data = UserLogin(identifier=username, password=SecretStr(password))
-    return login_user(user_data, db)
+    user_data = UserLogin(identifier=username, password=SecretStr(secret_value=password))
+    return login_user(user_data=user_data, db=db)
 
 # to implement
 def get_user_profile():

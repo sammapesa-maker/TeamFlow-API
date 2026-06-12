@@ -11,10 +11,10 @@ settings = get_settings()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return pwd_context.hash(secret=password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(secret=plain_password, hash=hashed_password)
 
 def create_access_token(user_id: str):
     payload = {
@@ -36,7 +36,7 @@ def create_refresh_token(user_id: str):
     return token, jti
 
 def hash_token(token: str):
-    return pwd_context.hash(token)
+    return pwd_context.hash(secret=token)
 
 def verify_token(token: str, hashed: str):
-    return pwd_context.verify(token, hashed)
+    return pwd_context.verify(secret=token, hash=hashed)
