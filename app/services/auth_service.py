@@ -3,13 +3,26 @@ from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import SecretStr
 from app.schemas.auth_schemas import UserRegister, UserLogin
-from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
+from app.core.security import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    create_refresh_token,
+)
 from datetime import datetime, timedelta, timezone
-from app.repositories.user_repository import create_user, get_user_by_email, get_user_by_username
+from app.repositories.user import (
+    create_user,
+    get_user_by_email,
+    get_user_by_username,
+)
 from app.core.config import get_settings
 from jose import JWTError, jwt
 from app.core.security import verify_token
-from app.repositories.token_repository import get_refresh_token_by_jti, revoke_refresh_token, create_refresh_token_entry
+from app.repositories.token import (
+    get_refresh_token_by_jti,
+    revoke_refresh_token,
+    create_refresh_token_entry,
+)
 
 settings = get_settings()
 SECRET_KEY = settings.SECRET_KEY
@@ -18,13 +31,20 @@ ALGORITHM = settings.ALGORITHM
 
 def register_user(user_data: UserRegister, db: Session):
     # Check if user already exists
-    if get_user_by_email(user_data.email, db) or get_user_by_username(user_data.username, db):
+    if get_user_by_email(user_data.email, db) or get_user_by_username(
+        user_data.username, db
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists"
         )
 
     try:
-        user = create_user(user_data.email, user_data.username, hash_password(user_data.password.get_secret_value()), db)
+        user = create_user(
+            user_data.email,
+            user_data.username,
+            hash_password(user_data.password.get_secret_value()),
+            db,
+        )
         return user
 
     except Exception as e:  # Any unhandled exceptions during user creation
@@ -36,13 +56,13 @@ def register_user(user_data: UserRegister, db: Session):
 
 
 def login_user(user_data: UserLogin, db: Session):
-    
+
     # check if identifier is email or username
     if "@" in user_data.identifier:
         user = get_user_by_email(user_data.identifier, db)
-    else:        
+    else:
         user = get_user_by_username(user_data.identifier, db)
-        
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
@@ -53,16 +73,16 @@ def login_user(user_data: UserLogin, db: Session):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
         )
-    
+
     access_token = create_access_token(user.id)
     refresh_token, jti = create_refresh_token(user.id)
 
-    create_refresh_token_entry(user.id, refresh_token, jti, datetime.now(timezone.utc) + timedelta(days=7), db)
+    create_refresh_token_entry(
+        user.id, refresh_token, jti, datetime.now(timezone.utc) + timedelta(days=7), db
+    )
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token
-    }
+    return {"access_token": access_token, "refresh_token": refresh_token}
+
 
 def refresh_token(token: str, db: Session):
     try:
@@ -95,12 +115,16 @@ def refresh_token(token: str, db: Session):
     access_token = create_access_token(user_id)
     new_refresh_token, new_jti = create_refresh_token(user_id)
 
-    create_refresh_token_entry(user_id, new_refresh_token, new_jti, datetime.now(timezone.utc) + timedelta(days=7), db)
+    create_refresh_token_entry(
+        user_id,
+        new_refresh_token,
+        new_jti,
+        datetime.now(timezone.utc) + timedelta(days=7),
+        db,
+    )
 
-    return {
-        "access_token": access_token,
-        "refresh_token": new_refresh_token
-    }
+    return {"access_token": access_token, "refresh_token": new_refresh_token}
+
 
 def logout(token: str, db: Session):
     try:
@@ -113,8 +137,22 @@ def logout(token: str, db: Session):
 
     return {"message": "Logged out"}
 
+
 def login_form(form_data: OAuth2PasswordRequestForm, db: Session):
     username = form_data.username
     password = form_data.password
     user_data = UserLogin(identifier=username, password=SecretStr(password))
     return login_user(user_data, db)
+
+# to implement
+def get_user_profile():
+    pass
+
+def update_profile():
+    pass
+
+def change_password():
+    pass
+
+def promote_to_superuser(): # (admin-only)
+    pass
