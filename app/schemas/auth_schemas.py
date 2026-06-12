@@ -75,3 +75,10 @@ class TokenResponse(BaseModel):
     
 class RefreshIn(BaseModel):
     token: str
+
+# to implement
+class UserUpdate(BaseModel):
+    pass
+
+class ChangePassword(BaseModel):
+    pass
