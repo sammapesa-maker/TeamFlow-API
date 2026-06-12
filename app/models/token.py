@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String, DateTime, Boolean, Text
 from app.core.database import Base
-from app.models.base_models import TimestampMixin
+from app.models.base import TimestampMixin
+
 
 class RefreshToken(Base, TimestampMixin):
     __tablename__ = "refresh_tokens"

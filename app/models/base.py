@@ -1,4 +1,3 @@
-from app.core.database import Base
 from sqlalchemy import Column, DateTime
 from datetime import datetime, timezone
 
