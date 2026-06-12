@@ -39,9 +39,20 @@ def login(
 ):
     return auth_service.login_form(form_data=form_data, db=db)
 
+@router.patch(path="/change-password")
+def change_password(data: auth_schemas.ChangePassword, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return auth_service.change_password(data=data, db=db, user_id=user.id) # type: ignore
 
 # === USER ENDPOINTS ===
 
 @router.get(path="/me", response_model=auth_schemas.UserResponse)
 def get_user(user: User = Depends(get_current_user)):
     return user
+
+@router.patch(path="/me", response_model=auth_schemas.UserResponse)
+def update_user(data: auth_schemas.UserUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return auth_service.update_profile(data=data, user=user, db=db)
+
+@router.delete(path="/me", response_model=auth_schemas.UserResponse)
+def delete_user(user: User = Depends(get_current_user)):
+    pass
