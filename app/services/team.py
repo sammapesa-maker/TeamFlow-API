@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-
+from app.models.user import User
 from app.repositories.team import (
     get_team_by_id,
     get_team_by_name,
@@ -10,6 +10,9 @@ from app.repositories.team import (
     get_teams_by_owner,
     list_teams,
 )
+
+def is_owner(user_id: int, resource_id: int):
+    return user_id == resource_id
 
 
 # -----------------------
@@ -34,17 +37,23 @@ def create_team_service(
 # READ
 # -----------------------
 
-def get_team_service(db: Session, team_id: int):
+def get_team_service(user: User, db: Session, team_id: int):
     team = get_team_by_id(db, team_id)
 
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
+    
+    if not is_owner(user.id, team.owner_id):  # ty:ignore[invalid-argument-type]
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
     return team
 
 
-def list_teams_service(db: Session, skip: int = 0, limit: int = 100):
-    return list_teams(db, skip, limit)
+def list_teams_service(user: User, db: Session, skip: int = 0, limit: int = 100):
+    if user.is_superuser:
+        return list_teams(db)
+    
+    return get_teams_by_owner(db, user.id)  # ty:ignore[invalid-argument-type]
 
 
 def get_teams_by_owner_service(db: Session, owner_id: int):
@@ -56,6 +65,7 @@ def get_teams_by_owner_service(db: Session, owner_id: int):
 # -----------------------
 
 def update_team_service(
+    user: User,
     db: Session,
     team_id: int,
     name: str | None = None,
@@ -65,6 +75,9 @@ def update_team_service(
 
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
+    
+    if not is_owner(user.id, team.owner_id):  # ty:ignore[invalid-argument-type]
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
     # optional: prevent duplicate names
     if name and name != team.name:
@@ -81,10 +94,13 @@ def update_team_service(
 # DELETE
 # -----------------------
 
-def delete_team_service(db: Session, team_id: int):
+def delete_team_service(user: User, db: Session, team_id: int):
     team = get_team_by_id(db, team_id)
 
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
+    
+    if not is_owner(user.id, team.owner_id):  # ty:ignore[invalid-argument-type]
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
     return delete_team(db, team_id)
