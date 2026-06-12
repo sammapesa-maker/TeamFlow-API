@@ -10,6 +10,7 @@ from app.repositories.team import (
     get_teams_by_owner,
     list_teams,
 )
+from app.repositories.team_member import create_team_member
 
 def is_owner(user_id: int, resource_id: int):
     return user_id == resource_id
@@ -30,8 +31,12 @@ def create_team_service(
     if existing:
         raise HTTPException(status_code=400, detail="Team name already exists")
 
-    return create_team(db, name, owner_id, description) # type: ignore
-
+    team = create_team(db, name, owner_id, description) # type: ignore
+    
+    # add initial member as owner
+    create_team_member(db, owner_id, team.id, "owner", "active")  # ty:ignore[invalid-argument-type]
+    
+    return team
 
 # -----------------------
 # READ
