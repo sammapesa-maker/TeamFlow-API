@@ -13,7 +13,10 @@ from datetime import datetime, timedelta, timezone
 from app.repositories.user import (
     create_user,
     get_user_by_email,
+    get_user_by_id,
     get_user_by_username,
+    update_user,
+    update_user_password
 )
 from app.core.config import get_settings, Settings
 from jose import JWTError, jwt
@@ -23,6 +26,8 @@ from app.repositories.token import (
     revoke_refresh_token,
     create_refresh_token_entry,
 )
+from app.schemas import auth_schemas
+from app.models.user import User
 
 settings: Settings = get_settings()
 SECRET_KEY: str = settings.SECRET_KEY
@@ -144,15 +149,82 @@ def login_form(form_data: OAuth2PasswordRequestForm, db: Session):
     user_data = UserLogin(identifier=username, password=SecretStr(secret_value=password))
     return login_user(user_data=user_data, db=db)
 
-# to implement
-def get_user_profile():
-    pass
 
-def update_profile():
-    pass
+def get_user_profile(db: Session, user_id: int):
+    user = get_user_by_id(user_id, db)
 
-def change_password():
-    pass
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-def promote_to_superuser(): # (admin-only)
-    pass
+    return user
+
+
+def update_profile(
+    data: auth_schemas.UserUpdate,
+    user: User,
+    db: Session
+):
+    username: str | None = data.username
+    email: str | None = data.email
+    is_active: bool = user.is_active # type: ignore
+
+    # email uniqueness check
+    if email and email != user.email:
+        existing = get_user_by_email(email, db)
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+
+    return update_user(
+        user,
+        db,
+        username=username,
+        email=email,
+        is_active=is_active,
+    )
+
+
+def change_password(
+    data: auth_schemas.ChangePassword,
+    db: Session,
+    user_id: int
+):
+    old_password = data.current_password.get_secret_value()
+    new_password = data.new_password.get_secret_value()
+    
+    user = get_user_by_id(user_id, db)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(old_password, user.hashed_password): #type: ignore
+        raise HTTPException(status_code=400, detail="Incorrect password")
+
+    hashed = hash_password(new_password)
+
+    user = update_user_password(user, hashed, db)
+    
+    if user:
+        return {
+            "message": "Password updated successfully",
+            "user_id": user.id
+        }
+
+def promote_to_superuser(
+    db: Session,
+    user_id: int,
+    actor_is_admin: bool,
+):
+    if not actor_is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    user = get_user_by_id(user_id, db)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # direct mutation via your existing repo pattern
+    user.is_superuser = True  # type: ignore
+    db.commit()
+    db.refresh(user)
+
+    return user
