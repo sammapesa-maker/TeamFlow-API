@@ -25,12 +25,12 @@ def login_json(user_data: auth_schemas.UserLogin, db: Session = Depends(get_db))
 
 
 @router.post("/refresh", response_model=auth_schemas.TokenResponse)
-def refresh(token: auth_schemas.RefreshIn, db: Session = Depends(get_db)):
+def refresh(token: auth_schemas.RefreshTokenIn, db: Session = Depends(get_db)):
     return auth_service.refresh_token(token.token, db)
 
 
 @router.post("/logout")
-def logout(token: auth_schemas.RefreshIn, db: Session = Depends(get_db)):
+def logout(token: auth_schemas.RefreshTokenIn, db: Session = Depends(get_db)):
     return auth_service.logout(token.token, db)
 
 
