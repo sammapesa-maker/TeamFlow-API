@@ -5,7 +5,6 @@ from app.schemas import auth_schemas
 from app.services import auth_service
 from app.core.dependencies import get_db, get_current_user
 from app.models.user import User
-
 router = APIRouter()
 
 
@@ -42,6 +41,7 @@ def login(
 
 
 # === USER ENDPOINTS ===
+
 @router.get(path="/me", response_model=auth_schemas.UserResponse)
 def get_user(user: User = Depends(get_current_user)):
     return user
