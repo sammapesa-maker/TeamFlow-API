@@ -36,22 +36,6 @@ def list_tasks(db: Session, skip: int = 0, limit: int = 100) -> List[Task]:
     return db.query(Task).offset(skip).limit(limit).all()
 
 
-def get_tasks_by_team(db: Session, team_id: int) -> List[Task]:
-    return db.query(Task).filter(Task.team_id == team_id).all()
-
-
-def get_tasks_by_creator(db: Session, creator_id: int) -> List[Task]:
-    return db.query(Task).filter(Task.creator_id == creator_id).all()
-
-
-def get_tasks_by_assignee(db: Session, assigned_to_id: int) -> List[Task]:
-    return (
-        db.query(Task)
-        .filter(Task.assigned_to_id == assigned_to_id)
-        .all()
-    )
-
-
 def update_task(
     db: Session,
     task_id: int,
@@ -90,60 +74,3 @@ def delete_task(db: Session, task_id: int) -> bool:
     db.commit()
     return True
 
-
-# --- FILTERS ---
-
-def get_tasks_by_status(db: Session, status: str) -> List[Task]:
-    return db.query(Task).filter(Task.status == status).all()
-
-
-def get_tasks_by_priority(db: Session, priority: str) -> List[Task]:
-    return db.query(Task).filter(Task.priority == priority).all()
-
-
-def get_tasks_by_team_and_status(
-    db: Session, team_id: int, status: str
-) -> List[Task]:
-    return (
-        db.query(Task)
-        .filter(
-            Task.team_id == team_id,
-            Task.status == status,
-        )
-        .all()
-    )
-
-
-# --- ACTIONS ---
-
-def assign_task(
-    db: Session, task_id: int, user_id: Optional[int]
-) -> Optional[Task]:
-    """
-    Assign or unassign a task.
-    Pass user_id=None to unassign.
-    """
-    task = db.query(Task).filter(Task.id == task_id).first()
-    if not task:
-        return None
-
-    task.assigned_to_id = user_id # type : ignore
-    db.commit()
-    db.refresh(task)
-    return task
-
-
-def change_task_status(
-    db: Session, task_id: int, status: str
-) -> Optional[Task]:
-    """
-    Change task status (todo, in_progress, done).
-    """
-    task = db.query(Task).filter(Task.id == task_id).first()
-    if not task:
-        return None
-
-    task.status = status # type: ignore
-    db.commit()
-    db.refresh(task)
-    return task

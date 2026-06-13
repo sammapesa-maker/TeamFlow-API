@@ -1,38 +1,25 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_db, get_current_superuser
-
-from app.services.superuser import (
-    list_users,
-    promote_to_superuser,
-    demote_superuser,
-    activate_user,
-    deactivate_user,
-    delete_user,
-)
-
-from app.services.team import (
-    list_teams_service,
-    delete_team_service,
-    get_teams_by_owner_service
-)
-
-from app.services.team_member import (
-    list_team_members_service,
-    remove_user_from_team_service,
-)
-
-from app.services.task import (
-    list_tasks_service,
-    delete_task_service,
-)
-
+from app.core.dependencies import get_current_superuser, get_db
+from app.models.user import User
 from app.schemas.auth_schemas import UserResponse
+from app.schemas.task import TaskRead
 from app.schemas.team import TeamRead
 from app.schemas.team_member import TeamMemberRead
-from app.schemas.task import TaskRead
-from app.models.user import User
+from app.services.superuser import (
+    delete_user,
+    list_users,
+)
+from app.services.task import (
+    delete_task_service,
+    list_tasks_service,
+)
+from app.services.team import (
+    delete_team_service,
+    list_teams_service,
+)
+from app.services.team_member import list_team_members_service
 
 router = APIRouter(prefix="/admin", tags=["Super Admin"])
 
@@ -45,18 +32,12 @@ def get_users(
     db: Session = Depends(get_db),
     _: None = Depends(get_current_superuser),
 ):
+    # add sorting. filtering, pagination and searching
     return list_users(db)
 
-
-@router.patch("/users/{user_id}/promote")
-def promote(user_id: int, db: Session = Depends(get_db), _=Depends(get_current_superuser)):
-    return promote_to_superuser(db, user_id)
-
-
-@router.patch("/users/{user_id}/demote")
-def demote(user_id: int, db: Session = Depends(get_db), _=Depends(get_current_superuser)):
-    return demote_superuser(db, user_id)
-
+# router.post(/users/)
+# router.get(/users/{id})
+# router.patch(/users/{id})
 
 @router.delete("/users/{user_id}")
 def delete_user_route(user_id: int, db: Session = Depends(get_db), _=Depends(get_current_superuser)):
@@ -69,6 +50,7 @@ def delete_user_route(user_id: int, db: Session = Depends(get_db), _=Depends(get
 # =========================
 @router.get("/teams", response_model=list[TeamRead])
 def get_teams(db: Session = Depends(get_db), user: User =Depends(get_current_superuser)):
+    # add sorting. filtering, pagination and searching
     return list_teams_service(user, db)
 
 
@@ -76,14 +58,9 @@ def get_teams(db: Session = Depends(get_db), user: User =Depends(get_current_sup
 def delete_team(team_id: int, db: Session = Depends(get_db), user: User =Depends(get_current_superuser)):
     return delete_team_service(user, db, team_id)
 
-
-@router.get("/owner/{owner_id}", response_model=list[TeamRead])
-def teams_by_owner(
-    owner_id: int,
-    db: Session = Depends(get_db),
-    _ = Depends(get_current_superuser)
-):
-    return get_teams_by_owner_service(db, owner_id)
+# router.post(/teams/)
+# router.get(/teams/{id})
+# router.patch(/teams/{id})
 
 # =========================
 # TEAM MEMBERS (GLOBAL CONTROL)
@@ -94,17 +71,13 @@ def get_members(
     db: Session = Depends(get_db),
     _=Depends(get_current_superuser),
 ):
+    # add sorting. filtering, pagination and searching
     return list_team_members_service(db, team_id)
 
-
-@router.delete("/team-members/{team_id}/user/{user_id}")
-def remove_member(
-    team_id: int,
-    user_id: int,
-    db: Session = Depends(get_db),
-    _=Depends(get_current_superuser),
-):
-    return remove_user_from_team_service(db, user_id, team_id)
+# router.post(/team-members/)
+# router.get(/team-members/{id}/)
+# router.patch(/team-members/{id})
+# router.delete(/team-members/{id})
 
 
 # =========================
@@ -117,8 +90,14 @@ def get_tasks(
     db: Session = Depends(get_db),
     _=Depends(get_current_superuser),
 ):
+    # add sorting. filtering, pagination and searching
     return list_tasks_service(db, skip, limit)
 
+
+# router.post(/tasks/)
+# router.get(/tasks/{id}/)
+# router.patch(/tasks/{id})
+# router.delete(/tasks/{id})
 
 @router.delete("/tasks/{task_id}")
 def delete_task(

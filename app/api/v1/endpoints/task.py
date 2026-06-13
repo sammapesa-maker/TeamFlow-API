@@ -7,16 +7,8 @@ from app.services.task import (
     create_task_service,
     get_task_service,
     list_tasks_service,
-    get_tasks_by_team_service,
-    get_tasks_by_creator_service,
-    get_tasks_by_assignee_service,
     update_task_service,
-    delete_task_service,
-    get_tasks_by_status_service,
-    get_tasks_by_priority_service,
-    get_tasks_by_team_and_status_service,
-    assign_task_service,
-    change_task_status_service,
+    delete_task_service
 )
 
 from app.schemas.task import (
@@ -65,73 +57,16 @@ def get_task(
     return get_task_service(db, task_id)
 
 
-# -----------------------
-# LIST TASKS
-# -----------------------
 @router.get("/", response_model=list[TaskRead])
 def list_tasks(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
 ):
+    # add filtering, searching, sorting and pagination
     return list_tasks_service(db, skip, limit)
 
 
-# -----------------------
-# FILTERS
-# -----------------------
-@router.get("/team/{team_id}", response_model=list[TaskRead])
-def tasks_by_team(
-    team_id: int,
-    db: Session = Depends(get_db),
-):
-    return get_tasks_by_team_service(db, team_id)
-
-
-@router.get("/creator/{creator_id}", response_model=list[TaskRead])
-def tasks_by_creator(
-    creator_id: int,
-    db: Session = Depends(get_db),
-):
-    return get_tasks_by_creator_service(db, creator_id)
-
-
-@router.get("/assignee/{user_id}", response_model=list[TaskRead])
-def tasks_by_assignee(
-    user_id: int,
-    db: Session = Depends(get_db),
-):
-    return get_tasks_by_assignee_service(db, user_id)
-
-
-@router.get("/status/{status}", response_model=list[TaskRead])
-def tasks_by_status(
-    status: str,
-    db: Session = Depends(get_db),
-):
-    return get_tasks_by_status_service(db, status)
-
-
-@router.get("/priority/{priority}", response_model=list[TaskRead])
-def tasks_by_priority(
-    priority: str,
-    db: Session = Depends(get_db),
-):
-    return get_tasks_by_priority_service(db, priority)
-
-
-@router.get("/team/{team_id}/status/{status}", response_model=list[TaskRead])
-def tasks_by_team_and_status(
-    team_id: int,
-    status: str,
-    db: Session = Depends(get_db),
-):
-    return get_tasks_by_team_and_status_service(db, team_id, status)
-
-
-# -----------------------
-# UPDATE TASK
-# -----------------------
 @router.patch("/{task_id}", response_model=TaskRead)
 def update_task(
     task_id: int,
@@ -150,9 +85,6 @@ def update_task(
     )
 
 
-# -----------------------
-# DELETE TASK
-# -----------------------
 @router.delete("/{task_id}")
 def delete_task(
     task_id: int,
@@ -160,29 +92,3 @@ def delete_task(
     _: None = Depends(require_team_admin),
 ):
     return delete_task_service(db, task_id)
-
-
-# -----------------------
-# ACTION: ASSIGN TASK
-# -----------------------
-@router.patch("/{task_id}/assign", response_model=TaskRead)
-def assign_task(
-    task_id: int,
-    user_id: int | None,
-    db: Session = Depends(get_db),
-    _: None = Depends(require_team_admin),
-):
-    return assign_task_service(db, task_id, user_id)
-
-
-# -----------------------
-# ACTION: CHANGE STATUS
-# -----------------------
-@router.patch("/{task_id}/status", response_model=TaskRead)
-def change_status(
-    task_id: int,
-    status: str,
-    db: Session = Depends(get_db),
-    _: None = Depends(require_team_member),
-):
-    return change_task_status_service(db, task_id, status)

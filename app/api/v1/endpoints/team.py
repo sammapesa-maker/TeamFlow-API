@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user, get_db, get_current_superuser
+from app.core.dependencies import get_current_user, get_db
 from app.models.user import User
 from app.schemas.team import (
     TeamCreate,
@@ -12,7 +12,6 @@ from app.services.team import (
     create_team_service,
     delete_team_service,
     get_team_service,
-    get_teams_by_owner_service,
     list_teams_service,
     update_team_service,
 )
@@ -20,9 +19,6 @@ from app.services.team import (
 router = APIRouter(prefix="/teams", tags=["Teams"])
 
 
-# -----------------------
-# CREATE TEAM
-# -----------------------
 @router.post("/", response_model=TeamRead)
 def create_team(
     payload: TeamCreate,
@@ -37,9 +33,6 @@ def create_team(
     )
 
 
-# -----------------------
-# GET TEAM BY ID
-# -----------------------
 @router.get("/{team_id}", response_model=TeamRead)
 def get_team(
     team_id: int,
@@ -49,9 +42,6 @@ def get_team(
     return get_team_service(user, db, team_id)
 
 
-# -----------------------
-# LIST TEAMS
-# -----------------------
 @router.get("/", response_model=list[TeamRead])
 def list_teams(
     skip: int = 0,
@@ -59,6 +49,7 @@ def list_teams(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
+    # add filtering, sorting, searching and pagination
     return list_teams_service(user, db, skip, limit)
 
 

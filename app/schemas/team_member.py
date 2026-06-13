@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import Optional, Literal
 from datetime import datetime
+from typing import Literal, Optional, List
+
+from pydantic import BaseModel, Field
+
 
 class TeamMemberBase(BaseModel):
     role: Literal["owner", "admin", "member"] = "member"
