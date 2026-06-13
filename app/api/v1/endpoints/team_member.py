@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_db
+from app.core.dependencies import get_db, get_current_superuser
 
 from app.services.team_member import (
     add_team_member_service,
@@ -89,6 +89,7 @@ def list_members(
 def list_user_teams(
     user_id: int,
     db: Session = Depends(get_db),
+    _=Depends(get_current_superuser)
 ):
     return list_user_teams_service(db, user_id)
 
