@@ -2,7 +2,9 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
 from app.models.user import User
-
+from app.repositories import user as user_crud
+from app.schemas.auth_schemas import UserRegister, UserUpdate
+from app.services.auth_service import register_user, update_profile
 
 def _get_user(db: Session, user_id: int) -> User:
     user = db.query(User).filter(User.id == user_id).first()
@@ -12,6 +14,10 @@ def _get_user(db: Session, user_id: int) -> User:
             detail="User not found",
         )
     return user
+
+
+def get_user(db:Session, user_id: int):
+    return user_crud.get_user_by_id(user_id=user_id, db=db)
 
 
 def promote_to_superuser(db: Session, user_id: int) -> User:
@@ -66,4 +72,11 @@ def delete_user(db: Session, user_id: int) -> None:
 
 
 def list_users(db: Session) -> list[User]:
-    return db.query(User).order_by(User.id.desc()).all()
+    return user_crud.get_all_users(db)
+
+def create_user(user: UserRegister, db: Session):
+    return register_user(user_data=user, db=db)
+
+def update_user(db: Session, user_id:int,  user_data: UserUpdate):
+    user = get_user(db, user_id)
+    return update_profile(data=user_data, user=user, db=db)
