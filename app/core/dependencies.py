@@ -1,10 +1,10 @@
-from typing import Generator, Optional
+from typing import Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
 
-from app.core.database import SessionLocal
+from app.core.database import AsyncSessionLocal
 from app.core.config import get_settings
 from app.core.security import oauth2_scheme
 from app.models.user import User
@@ -21,20 +21,17 @@ ALGORITHM = settings.ALGORITHM
 # -------------------------
 # DB DEPENDENCY
 # -------------------------
-def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db():
+    async with AsyncSessionLocal() as session:  # ty:ignore[invalid-context-manager]
+        yield session
 
 
 # -------------------------
 # CURRENT USER
 # -------------------------
-def get_current_user(
+async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> User:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -74,7 +71,7 @@ def get_current_user(
 # -------------------------
 # ACTIVE USER
 # -------------------------
-def get_current_active_user(
+async def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
     if not current_user.is_active:
@@ -88,7 +85,7 @@ def get_current_active_user(
 # -------------------------
 # SUPERUSER
 # -------------------------
-def get_current_superuser(
+async def get_current_superuser(
     current_user: User = Depends(get_current_user),
 ) -> User:
     if not current_user.is_superuser:
@@ -109,9 +106,10 @@ MEMBER = "member"
 
 ADMIN_ROLES = {OWNER, ADMIN}
 
-def get_team_membership(
+
+async def get_team_membership(
     team_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ) -> Optional[TeamMember]:
 
@@ -137,13 +135,13 @@ def get_team_membership(
     return membership
 
 
-def require_team_member(
+async def require_team_member(
     membership: TeamMember = Depends(get_team_membership),
 ):
     return membership
 
 
-def require_team_admin(
+async def require_team_admin(
     membership: TeamMember = Depends(get_team_membership),
     user: User = Depends(get_current_active_user),
 ):
@@ -159,7 +157,7 @@ def require_team_admin(
     return membership
 
 
-def require_team_owner(
+async def require_team_owner(
     membership: TeamMember = Depends(get_team_membership),
 ):
     if membership.role != OWNER:
@@ -170,8 +168,8 @@ def require_team_owner(
     return membership
 
 
-def require_role(*allowed_roles: str):
-    def dependency(
+async def require_role(*allowed_roles: str):
+    async def dependency(
         membership: TeamMember = Depends(get_team_membership),
     ):
         if membership.role not in allowed_roles:
