@@ -1,57 +1,64 @@
-from sqlalchemy.orm import Session
-from typing import List, Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 from app.models.team import Team
+from sqlalchemy import select
 
 
-def create_team(db: Session, name: str, owner_id: int, description: str = None) -> Team: # type : ignore
+async def create_team(
+    db: AsyncSession, name: str, owner_id: int, description: str | None = None
+):
     team = Team(name=name, owner_id=owner_id, description=description)
     db.add(team)
-    db.commit()
-    db.refresh(team)
+    await db.commit()
+    await db.refresh(team)
     return team
 
 
-def get_team_by_id(db: Session, team_id: int) -> Optional[Team]:
-    return db.query(Team).filter(Team.id == team_id).first()
+async def get_team_by_id(db: AsyncSession, team_id: int):
+    results = await db.execute(select(Team).where(Team.id == team_id))
+    return results
 
 
-def get_team_by_name(db: Session, name: str) -> Optional[Team]:
-    return db.query(Team).filter(Team.name == name).first()
+async def get_team_by_name(db: AsyncSession, name: str):
+    results = await db.execute(select(Team).where(Team.name == name))
+    return results
 
 
-def get_teams_by_owner(db: Session, owner_id: int) -> List[Team]:
-    return db.query(Team).filter(Team.owner_id == owner_id).all()
+async def get_teams_by_owner(db: AsyncSession, owner_id: int):
+    results = await db.execute(select(Team).where(Team.owner_id == owner_id))
+    return results
 
 
-def list_teams(db: Session, skip: int = 0, limit: int = 100) -> List[Team]:
-    return db.query(Team).offset(skip).limit(limit).all()
+async def list_teams(db: AsyncSession, skip: int = 0, limit: int = 100):
+    results = await db.execute(select(Team).offset(skip).limit(limit))
+    return results
 
 
-def update_team(
-    db: Session,
+async def update_team(
+    db: AsyncSession,
     team_id: int,
     name: Optional[str] = None,
     description: Optional[str] = None,
-) -> Optional[Team]:
-    team = db.query(Team).filter(Team.id == team_id).first()
+):
+    team = db.execute(select(Team).where(Team.id == team_id))
     if not team:
         return None
 
     if name is not None:
-        team.name = name  # ty:ignore[invalid-assignment]
+        team.name = name  # ty:ignore[unresolved-attribute]
     if description is not None:
-        team.description = description  # ty:ignore[invalid-assignment]
+        team.description = description  # ty:ignore[unresolved-attribute]
 
-    db.commit()
-    db.refresh(team)
+    await db.commit()
+    await db.refresh(team)
     return team
 
 
-def delete_team(db: Session, team_id: int) -> bool:
-    team = db.query(Team).filter(Team.id == team_id).first()
+async def delete_team(db: AsyncSession, team_id: int) -> bool:
+    team = db.execute(select(Team).where(Team.id == team_id))
     if not team:
         return False
 
-    db.delete(team)
-    db.commit()
+    await db.delete(team)
+    await db.commit()
     return True

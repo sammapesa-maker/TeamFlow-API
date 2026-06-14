@@ -1,31 +1,37 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User
-from typing import Optional, List
+from typing import Optional
+from sqlalchemy import select
 
 
-def create_user(email: str, username: str, hashed_password: str, db: Session) -> User:
+async def create_user(
+    email: str, username: str, hashed_password: str, db: AsyncSession
+) -> User:
     user = User(email=email, username=username, hashed_password=hashed_password)
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return user
 
 
-def get_user_by_email(email: str, db: Session) -> Optional[User]:
-    return db.query(User).filter(User.email == email).first()
+async def get_user_by_email(email: str, db: AsyncSession):
+    results = await db.execute(select(User).where(User.email == email))
+    return results
 
 
-def get_user_by_username(username: str, db: Session) -> Optional[User]:
-    return db.query(User).filter(User.username == username).first()
+async def get_user_by_username(username: str, db: AsyncSession):
+    results = await db.execute(select(User).where(User.username == username))
+    return results
 
 
-def get_user_by_id(user_id: int, db: Session) -> Optional[User]:
-    return db.query(User).filter(User.id == user_id).first()
+async def get_user_by_id(user_id: int, db: AsyncSession):
+    results = await db.execute(select(User).where(User.id == user_id))
+    return results
 
 
-def update_user(
+async def update_user(
     user: User,
-    db: Session,
+    db: AsyncSession,
     *,
     username: Optional[str] = None,
     email: Optional[str] = None,
@@ -36,38 +42,41 @@ def update_user(
     """
 
     if username is not None:
-        user.username = username # type: ignore
+        user.username = username  # type: ignore
 
     if email is not None:
-        user.email = email # type: ignore
+        user.email = email  # type: ignore
 
     if is_active is not None:
-        user.is_active = is_active # type: ignore
+        user.is_active = is_active  # type: ignore
 
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return user
 
 
-def delete_user(user: User, db: Session) -> None:
+async def delete_user(user: User, db: AsyncSession) -> None:
     """
     Deletes a user instance (soft delete)
     """
-    user.is_active = False # type : ignore
-    db.commit()
+    user.is_active = False  # type : ignore
+    await db.commit()
 
 
-def get_all_users(
-    db: Session,
+async def get_all_users(
+    db: AsyncSession,
     *,
     skip: int = 0,
     limit: int = 100,
-) -> List[User]:
-    return db.query(User).offset(skip).limit(limit).all()
+):
+    results = await db.execute(select(User).offset(skip).limit(limit))
+    return results.scalars().all()
 
 
-def update_user_password(user: User, hashed_password: str, db: Session) -> User:
-    user.hashed_password = hashed_password # type: ignore
-    db.commit()
-    db.refresh(user)
+async def update_user_password(
+    user: User, hashed_password: str, db: AsyncSession
+) -> User:
+    user.hashed_password = hashed_password  # type: ignore
+    await db.commit()
+    await db.refresh(user)
     return user

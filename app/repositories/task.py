@@ -1,17 +1,17 @@
-from sqlalchemy.orm import Session
-from typing import List, Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 from app.models.task import Task
+from sqlalchemy import select
 
-
-def create_task(
-    db: Session,
+async def create_task(
+    db: AsyncSession,
     title: str,
     team_id: int,
     creator_id: int,
-    description: str = None, # type: ignore
+    description: str = None,  # type: ignore
     status: str = "todo",
     priority: str = "medium",
-    assigned_to_id: int = None, # type: ignore
+    assigned_to_id: int = None,  # type: ignore
 ) -> Task:
     task = Task(
         title=title,
@@ -23,54 +23,55 @@ def create_task(
         assigned_to_id=assigned_to_id,
     )
     db.add(task)
-    db.commit()
-    db.refresh(task)
+    await db.commit()
+    await db.refresh(task)
     return task
 
 
-def get_task_by_id(db: Session, task_id: int) -> Optional[Task]:
-    return db.query(Task).filter(Task.id == task_id).first()
+async def get_task_by_id(db: AsyncSession, task_id: int):
+    results = await db.execute(select(Task).where(Task.id == task_id))
+    return results
 
 
-def list_tasks(db: Session, skip: int = 0, limit: int = 100) -> List[Task]:
-    return db.query(Task).offset(skip).limit(limit).all()
+async def list_tasks(db: AsyncSession, skip: int = 0, limit: int = 100):
+    results = await db.execute(select(Task).offset(skip).limit(limit))
+    return results.scalars().all()
 
 
-def update_task(
-    db: Session,
+async def update_task(
+    db: AsyncSession,
     task_id: int,
     title: Optional[str] = None,
     description: Optional[str] = None,
     status: Optional[str] = None,
     priority: Optional[str] = None,
     assigned_to_id: Optional[int] = None,
-) -> Optional[Task]:
-    task = db.query(Task).filter(Task.id == task_id).first()
+):
+    task = db.execute(select(Task).where(Task.id == task_id))
     if not task:
         return None
 
     if title is not None:
-        task.title = title # type:ignore
+        task.title = title  # type:ignore
     if description is not None:
-        task.description = description # type:ignore
+        task.description = description  # type:ignore
     if status is not None:
-        task.status = status # type:ignore
+        task.status = status  # type:ignore
     if priority is not None:
-        task.priority = priority # type:ignore
+        task.priority = priority  # type:ignore
     if assigned_to_id is not None:
-        task.assigned_to_id = assigned_to_id # type:ignore
+        task.assigned_to_id = assigned_to_id  # type:ignore
 
-    db.commit()
-    db.refresh(task)
+    await db.commit()
+    await db.refresh(task)
     return task
 
 
-def delete_task(db: Session, task_id: int) -> bool:
-    task = db.query(Task).filter(Task.id == task_id).first()
+async def delete_task(db: AsyncSession, task_id: int) -> bool:
+    task = db.execute(select(Task).where(Task.id == task_id))
     if not task:
         return False
 
-    db.delete(task)
-    db.commit()
+    await db.delete(task)
+    await db.commit()
     return True
-
