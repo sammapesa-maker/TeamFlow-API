@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import (
     get_current_user,
     get_db,
-    require_admin_or_owner,
+    require_team_admin,
     require_team_member,
     require_team_owner
 )
@@ -67,7 +67,7 @@ async def update_team(
     team_id: int,
     payload: TeamUpdate,
     db: AsyncSession = Depends(get_db),
-    _ = Depends(require_admin_or_owner),
+    _ = Depends(require_team_admin),
 ):
     return await update_team_service(
         db=db,

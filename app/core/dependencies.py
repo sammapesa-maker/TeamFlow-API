@@ -175,7 +175,3 @@ def require_role(*allowed_roles: str):
         return membership
 
     return dependency
-
-
-# Prebuilt shortcuts
-require_admin_or_owner = require_role(OWNER, ADMIN)
