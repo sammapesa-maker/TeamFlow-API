@@ -23,7 +23,7 @@ def is_owner(user_id: int, resource_id: int):
 def create_team_service(
     db: Session,
     name: str,
-    owner_id: int,
+    user: User,
     description: str | None = None,
 ):
     # check duplicate name (optional but recommended)
@@ -31,10 +31,10 @@ def create_team_service(
     if existing:
         raise HTTPException(status_code=400, detail="Team name already exists")
 
-    team = create_team(db, name, owner_id, description) # type: ignore
+    team = create_team(db, name, user.id, description) # type: ignore
     
     # add initial member as owner
-    create_team_member(db, owner_id, team.id, "owner", "active")  # ty:ignore[invalid-argument-type]
+    create_team_member(db, user.id, team.id, "owner", "active")  # ty:ignore[invalid-argument-type]
     
     return team
 

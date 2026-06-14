@@ -28,7 +28,7 @@ def create_team(
     return create_team_service(
         db=db,
         name=payload.name,
-        owner_id=user.id,  # ty:ignore[invalid-argument-type]
+        user=user,
         description=payload.description,
     )
 
