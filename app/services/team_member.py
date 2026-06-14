@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 
 from app.repositories.team_member import (
@@ -11,17 +11,13 @@ from app.repositories.team_member import (
 )
 
 
-# -----------------------
-# CREATE
-# -----------------------
-
-def add_team_member_service(
-    db: Session,
+async def add_team_member_service(
+    db: AsyncSession,
     user_id: int,
     team_id: int,
     role: str = "member",
 ):
-    member = create_team_member(
+    member = await create_team_member(
         db,
         user_id=user_id,
         team_id=team_id,
@@ -42,8 +38,9 @@ def add_team_member_service(
 # READ
 # -----------------------
 
-def get_team_member_service(db: Session, member_id: int):
-    member = get_team_member_by_id(db, member_id)
+
+async def get_team_member_service(db: AsyncSession, member_id: int):
+    member = await get_team_member_by_id(db, member_id)
 
     if not member:
         raise HTTPException(status_code=404, detail="Team member not found")
@@ -51,8 +48,10 @@ def get_team_member_service(db: Session, member_id: int):
     return member
 
 
-def get_user_team_membership_service(db: Session, user_id: int, team_id: int):
-    member = get_team_member(db, user_id, team_id)
+async def get_user_team_membership_service(
+    db: AsyncSession, user_id: int, team_id: int
+):
+    member = await get_team_member(db, user_id, team_id)
 
     if not member:
         raise HTTPException(status_code=404, detail="Membership not found")
@@ -60,30 +59,31 @@ def get_user_team_membership_service(db: Session, user_id: int, team_id: int):
     return member
 
 
-def list_team_members_service(db: Session, team_id: int):
-    return list_team_members(db, team_id)
+async def list_team_members_service(db: AsyncSession, team_id: int):
+    return await list_team_members(db, team_id)
 
 
-def list_user_teams_service(db: Session, user_id: int):
-    return list_user_teams(db, user_id)
+async def list_user_teams_service(db: AsyncSession, user_id: int):
+    return await list_user_teams(db, user_id)
 
 
 # -----------------------
 # UPDATE
 # -----------------------
 
-def update_team_member_service(
-    db: Session,
+
+async def update_team_member_service(
+    db: AsyncSession,
     member_id: int,
     role: str | None = None,
     status: str | None = None,
 ):
-    member = get_team_member_by_id(db, member_id)
+    member = await get_team_member_by_id(db, member_id)
 
     if not member:
         raise HTTPException(status_code=404, detail="Team member not found")
 
-    return update_team_member(
+    return await update_team_member(
         db,
         member_id=member_id,
         role=role,
@@ -95,27 +95,28 @@ def update_team_member_service(
 # DELETE / REMOVE
 # -----------------------
 
-def remove_team_member_service(db: Session, member_id: int):
-    member = get_team_member_by_id(db, member_id)
+
+async def remove_team_member_service(db: AsyncSession, member_id: int):
+    member = await get_team_member_by_id(db, member_id)
 
     if not member:
         raise HTTPException(status_code=404, detail="Team member not found")
 
-    return update_team_member(
+    return await update_team_member(
         db,
         member_id=member_id,
         status="removed",
     )
 
 
-def remove_user_from_team_service(db: Session, user_id: int, team_id: int):
-    member = get_team_member(db, user_id, team_id)
+async def remove_user_from_team_service(db: AsyncSession, user_id: int, team_id: int):
+    member = await get_team_member(db, user_id, team_id)
 
     if not member:
         raise HTTPException(status_code=404, detail="Membership not found")
 
-    return update_team_member(
+    return await update_team_member(
         db,
-        member_id=member.id, # type: ignore
+        member_id=member.id,
         status="removed",
     )

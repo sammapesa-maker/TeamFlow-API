@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 from app.models.user import User
 from app.repositories.team import (
@@ -12,6 +12,7 @@ from app.repositories.team import (
 )
 from app.repositories.team_member import create_team_member
 
+
 def is_owner(user_id: int, resource_id: int):
     return user_id == resource_id
 
@@ -20,77 +21,83 @@ def is_owner(user_id: int, resource_id: int):
 # CREATE
 # -----------------------
 
-def create_team_service(
-    db: Session,
+
+async def create_team_service(
+    db: AsyncSession,
     name: str,
     user: User,
     description: str | None = None,
 ):
     # check duplicate name (optional but recommended)
-    existing = get_team_by_name(db, name)
+    existing = await get_team_by_name(db, name)
     if existing:
         raise HTTPException(status_code=400, detail="Team name already exists")
 
-    team = create_team(db, name, user.id, description) # type: ignore
-    
+    team = await create_team(db, name, user.id, description)  # type: ignore
+
     # add initial member as owner
-    create_team_member(db, user.id, team.id, "owner", "active")  # ty:ignore[invalid-argument-type]
-    
+    await create_team_member(db, user.id, team.id, "owner", "active")  # ty:ignore[invalid-argument-type]
+
     return team
+
 
 # -----------------------
 # READ
 # -----------------------
 
-def get_team_service(user: User, db: Session, team_id: int):
-    team = get_team_by_id(db, team_id)
+
+async def get_team_service(user: User, db: AsyncSession, team_id: int):
+    team = await get_team_by_id(db, team_id)
 
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
-    
+
     if not is_owner(user.id, team.owner_id):  # ty:ignore[invalid-argument-type]
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     return team
 
 
-def list_teams_service(user: User, db: Session, skip: int = 0, limit: int = 100):
+async def list_teams_service(
+    user: User, db: AsyncSession, skip: int = 0, limit: int = 100
+):
     if user.is_superuser:
-        return list_teams(db)
-    
-    return get_teams_by_owner(db, user.id)  # ty:ignore[invalid-argument-type]
+        return await list_teams(db)
+
+    return await get_teams_by_owner(db, user.id)  # ty:ignore[invalid-argument-type]
 
 
-def get_teams_by_owner_service(db: Session, owner_id: int):
-    return get_teams_by_owner(db, owner_id)
+async def get_teams_by_owner_service(db: AsyncSession, owner_id: int):
+    return await get_teams_by_owner(db, owner_id)
 
 
 # -----------------------
 # UPDATE
 # -----------------------
 
-def update_team_service(
+
+async def update_team_service(
     user: User,
-    db: Session,
+    db: AsyncSession,
     team_id: int,
     name: str | None = None,
     description: str | None = None,
 ):
-    team = get_team_by_id(db, team_id)
+    team = await get_team_by_id(db, team_id)
 
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
-    
+
     if not is_owner(user.id, team.owner_id):  # ty:ignore[invalid-argument-type]
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     # optional: prevent duplicate names
     if name and name != team.name:
-        existing = get_team_by_name(db, name)
+        existing = await get_team_by_name(db, name)
         if existing:
             raise HTTPException(status_code=400, detail="Team name already exists")
 
-    updated = update_team(db, team_id, name=name, description=description)
+    updated = await update_team(db, team_id, name=name, description=description)
 
     return updated
 
@@ -99,13 +106,14 @@ def update_team_service(
 # DELETE
 # -----------------------
 
-def delete_team_service(user: User, db: Session, team_id: int):
-    team = get_team_by_id(db, team_id)
+
+async def delete_team_service(user: User, db: AsyncSession, team_id: int):
+    team = await get_team_by_id(db, team_id)
 
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
-    
+
     if not is_owner(user.id, team.owner_id):  # ty:ignore[invalid-argument-type]
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    return delete_team(db, team_id)
+    return await delete_team(db, team_id)

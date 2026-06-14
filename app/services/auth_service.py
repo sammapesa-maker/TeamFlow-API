@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import SecretStr
@@ -16,7 +16,7 @@ from app.repositories.user import (
     get_user_by_id,
     get_user_by_username,
     update_user,
-    update_user_password
+    update_user_password,
 )
 from app.core.config import get_settings, Settings
 from jose import JWTError, jwt
@@ -34,9 +34,9 @@ SECRET_KEY: str = settings.SECRET_KEY
 ALGORITHM: str = settings.ALGORITHM
 
 
-def register_user(user_data: UserRegister, db: Session):
+async def register_user(user_data: UserRegister, db: AsyncSession):
     # Check if user already exists
-    if get_user_by_email(email=user_data.email, db=db) or get_user_by_username(
+    if await get_user_by_email(email=user_data.email, db=db) or await get_user_by_username(
         user_data.username, db
     ):
         raise HTTPException(
@@ -44,7 +44,7 @@ def register_user(user_data: UserRegister, db: Session):
         )
 
     try:
-        user = create_user(
+        user = await create_user(
             email=user_data.email,
             username=user_data.username,
             hashed_password=hash_password(user_data.password.get_secret_value()),
@@ -60,13 +60,13 @@ def register_user(user_data: UserRegister, db: Session):
         )
 
 
-def login_user(user_data: UserLogin, db: Session):
+async def login_user(user_data: UserLogin, db: AsyncSession):
 
     # check if identifier is email or username
     if "@" in user_data.identifier:
-        user = get_user_by_email(email=user_data.identifier, db=db)
+        user = await get_user_by_email(email=user_data.identifier, db=db)
     else:
-        user = get_user_by_username(username=user_data.identifier, db=db)
+        user = await get_user_by_username(username=user_data.identifier, db=db)
 
     if not user:
         raise HTTPException(
@@ -74,22 +74,29 @@ def login_user(user_data: UserLogin, db: Session):
         )
 
     # Verify password
-    if not verify_password(plain_password=user_data.password.get_secret_value(), hashed_password=user.hashed_password):  # ty:ignore[invalid-argument-type]
+    if not verify_password(
+        plain_password=user_data.password.get_secret_value(),
+        hashed_password=user.hashed_password,
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
         )
 
-    access_token = create_access_token(user_id=user.id)  # ty:ignore[invalid-argument-type]
-    refresh_token, jti = create_refresh_token(user_id=user.id)  # ty:ignore[invalid-argument-type]
+    access_token = await create_access_token(user_id=user.id)
+    refresh_token, jti = await create_refresh_token(user_id=user.id)
 
-    create_refresh_token_entry(
-        user_id=user.id, token=refresh_token, jti=jti, expires_at=datetime.now(timezone.utc) + timedelta(days=7), db=db  # ty:ignore[invalid-argument-type]
+    await create_refresh_token_entry(
+        user_id=user.id,
+        token=refresh_token,
+        jti=jti,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        db=db
     )
 
     return {"access_token": access_token, "refresh_token": refresh_token}
 
 
-def refresh_token(token: str, db: Session):
+async def refresh_token(token: str, db: AsyncSession):
     try:
         payload = jwt.decode(token=str(token), key=SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError as e:
@@ -102,7 +109,7 @@ def refresh_token(token: str, db: Session):
     jti = payload.get("jti")
     user_id = payload.get("sub")
 
-    db_token = get_refresh_token_by_jti(jti, db)
+    db_token = await get_refresh_token_by_jti(jti, db)
 
     if not db_token or db_token.revoked:
         raise HTTPException(status_code=401, detail="Token revoked")
@@ -114,13 +121,13 @@ def refresh_token(token: str, db: Session):
         raise HTTPException(status_code=401, detail="Token mismatch")
 
     # ROTATION: revoke old token
-    revoke_refresh_token(jti, db)
+    await revoke_refresh_token(jti, db)
 
     # Issue new tokens
-    access_token = create_access_token(user_id)
-    new_refresh_token, new_jti = create_refresh_token(user_id)
+    access_token = await create_access_token(user_id)
+    new_refresh_token, new_jti = await create_refresh_token(user_id)
 
-    create_refresh_token_entry(
+    await create_refresh_token_entry(
         user_id=user_id,
         token=new_refresh_token,
         jti=new_jti,
@@ -131,27 +138,29 @@ def refresh_token(token: str, db: Session):
     return {"access_token": access_token, "refresh_token": new_refresh_token}
 
 
-def logout(token: str, db: Session):
+async def logout(token: str, db: AsyncSession):
     try:
         payload = jwt.decode(token=token, key=SECRET_KEY, algorithms=[ALGORITHM])
         jti = payload.get("jti")
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    revoke_refresh_token(jti, db)
+    await revoke_refresh_token(jti, db)
 
     return {"message": "Logged out"}
 
 
-def login_form(form_data: OAuth2PasswordRequestForm, db: Session):
+async def login_form(form_data: OAuth2PasswordRequestForm, db: AsyncSession):
     username = form_data.username
     password = form_data.password
-    user_data = UserLogin(identifier=username, password=SecretStr(secret_value=password))
-    return login_user(user_data=user_data, db=db)
+    user_data = UserLogin(
+        identifier=username, password=SecretStr(secret_value=password)
+    )
+    return await login_user(user_data=user_data, db=db)
 
 
-def get_user_profile(db: Session, user_id: int):
-    user = get_user_by_id(user_id, db)
+async def get_user_profile(db: AsyncSession, user_id: int):
+    user = await get_user_by_id(user_id, db)
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -159,18 +168,13 @@ def get_user_profile(db: Session, user_id: int):
     return user
 
 
-def update_profile(
-    data: auth_schemas.UserUpdate,
-    user: User,
-    db: Session
-):
+async def update_profile(data: auth_schemas.UserUpdate, user: User, db: AsyncSession):
     username: str | None = data.username
     email: str | None = data.email
-    is_active: bool = user.is_active # type: ignore
 
     # email uniqueness check
     if email and email != user.email:
-        existing = get_user_by_email(email, db)
+        existing = await get_user_by_email(email, db)
         if existing:
             raise HTTPException(status_code=400, detail="Email already in use")
 
@@ -179,52 +183,26 @@ def update_profile(
         db,
         username=username,
         email=email,
-        is_active=is_active,
     )
 
 
-def change_password(
-    data: auth_schemas.ChangePassword,
-    db: Session,
-    user_id: int
+async def change_password(
+    data: auth_schemas.ChangePassword, db: AsyncSession, user_id: int
 ):
     old_password = data.current_password.get_secret_value()
     new_password = data.new_password.get_secret_value()
-    
-    user = get_user_by_id(user_id, db)
+
+    user = await get_user_by_id(user_id, db)
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if not verify_password(old_password, user.hashed_password): #type: ignore
+    if not verify_password(old_password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect password")
 
     hashed = hash_password(new_password)
 
-    user = update_user_password(user, hashed, db)
-    
+    user = await update_user_password(user, hashed, db)
+
     if user:
-        return {
-            "message": "Password updated successfully",
-            "user_id": user.id
-        }
-
-def promote_to_superuser(
-    db: Session,
-    user_id: int,
-    actor_is_admin: bool,
-):
-    if not actor_is_admin:
-        raise HTTPException(status_code=403, detail="Not authorized")
-
-    user = get_user_by_id(user_id, db)
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # direct mutation via your existing repo pattern
-    user.is_superuser = True  # type: ignore
-    db.commit()
-    db.refresh(user)
-
-    return user
+        return {"message": "Password updated successfully", "user_id": user.id}

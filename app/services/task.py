@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 
 from app.repositories.task import (
@@ -6,30 +6,30 @@ from app.repositories.task import (
     get_task_by_id,
     list_tasks,
     update_task,
-    delete_task
+    delete_task,
 )
 
 
-def create_task_service(
-    db: Session,
+async def create_task_service(
+    db: AsyncSession,
     title: str,
     team_id: int,
     creator_id: int,
     description: str | None = None,
     priority: str = "medium",
 ):
-    return create_task(
+    return await create_task(
         db,
         title=title,
         team_id=team_id,
         creator_id=creator_id,
-        description=description, #type: ignore
+        description=description,  # type: ignore
         priority=priority,
     )
 
 
-def get_task_service(db: Session, task_id: int):
-    task = get_task_by_id(db, task_id)
+async def get_task_service(db: AsyncSession, task_id: int):
+    task = await get_task_by_id(db, task_id)
 
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -37,12 +37,12 @@ def get_task_service(db: Session, task_id: int):
     return task
 
 
-def list_tasks_service(db: Session, skip: int = 0, limit: int = 100):
-    return list_tasks(db, skip, limit)
+async def list_tasks_service(db: AsyncSession, skip: int = 0, limit: int = 100):
+    return await list_tasks(db, skip, limit)
 
 
-def update_task_service(
-    db: Session,
+async def update_task_service(
+    db: AsyncSession,
     task_id: int,
     title: str | None = None,
     description: str | None = None,
@@ -50,12 +50,12 @@ def update_task_service(
     priority: str | None = None,
     assigned_to_id: int | None = None,
 ):
-    task = get_task_by_id(db, task_id)
+    task = await get_task_by_id(db, task_id)
 
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    return update_task(
+    return await update_task(
         db,
         task_id=task_id,
         title=title,
@@ -66,8 +66,8 @@ def update_task_service(
     )
 
 
-def delete_task_service(db: Session, task_id: int):
-    task = get_task_by_id(db, task_id)
+async def delete_task_service(db: AsyncSession, task_id: int):
+    task = await get_task_by_id(db, task_id)
 
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")

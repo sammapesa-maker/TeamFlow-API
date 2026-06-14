@@ -30,36 +30,49 @@ async def get_user_by_id(user_id: int, db: AsyncSession):
 
 
 async def update_user(
-    user: User,
+    user_id: int,
     db: AsyncSession,
     *,
     username: Optional[str] = None,
     email: Optional[str] = None,
-    is_active: Optional[bool] = None,
 ) -> User:
     """
     Partial update of user fields
     """
 
+    user = await get_user_by_id(user_id, db)
     if username is not None:
-        user.username = username  # type: ignore
+        user.username = username
 
     if email is not None:
-        user.email = email  # type: ignore
-
-    if is_active is not None:
-        user.is_active = is_active  # type: ignore
+        user.email = email
 
     await db.commit()
     await db.refresh(user)
     return user
 
 
-async def delete_user(user: User, db: AsyncSession) -> None:
-    """
-    Deletes a user instance (soft delete)
-    """
-    user.is_active = False  # type : ignore
+async def deactivate_user(user_id:int, db: AsyncSession):
+    user = await get_user_by_id(user_id, db)
+    user.is_active = False
+    await db.commit()
+    return user
+
+
+async def activate_user(db: AsyncSession, user_id: int) -> User:
+    user = await get_user_by_id(user_id, db)
+
+    if not user.is_active:
+        user.is_active = True
+        await db.commit()
+        await db.refresh(user)
+
+    return user
+
+
+async def delete_user(user_id: int, db: AsyncSession) -> None:
+    user = await get_user_by_id(user_id, db)
+    await db.delete(user)
     await db.commit()
 
 
@@ -79,4 +92,26 @@ async def update_user_password(
     user.hashed_password = hashed_password  # type: ignore
     await db.commit()
     await db.refresh(user)
+    return user
+
+
+async def promote_to_superuser(db: AsyncSession, user_id: int) -> User:
+    user = await get_user_by_id(user_id, db)
+
+    if not user.is_superuser:
+        user.is_superuser = True
+        await db.commit()
+        await db.refresh(user)
+
+    return user
+
+
+async def demote_superuser(db: AsyncSession, user_id: int) -> User:
+    user = await get_user_by_id(user_id, db)
+
+    if user.is_superuser:
+        user.is_superuser = False
+        await db.commit()
+        await db.refresh(user)
+
     return user
