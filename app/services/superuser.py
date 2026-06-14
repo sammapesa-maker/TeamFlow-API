@@ -32,6 +32,7 @@ async def delete_user(db: AsyncSession, user_id: int) -> None:
 
 
 async def list_users(db: AsyncSession) -> list[User]:
+    # add sorting, filtering, pagination and searching
     return await user_crud.get_all_users(db)
 
 
@@ -46,3 +47,6 @@ async def update_user(db: AsyncSession, user_id: int, user_data: UserUpdate):
         username=user_data.username, 
         email=user_data.email
 )
+
+async def get_user(db: AsyncSession, user_id: int):
+    return await user_crud.get_user_by_id(db=db, user_id=user_id)
