@@ -40,7 +40,7 @@ async def update_team(
     name: Optional[str] = None,
     description: Optional[str] = None,
 ):
-    team = db.execute(select(Team).where(Team.id == team_id))
+    team = await db.execute(select(Team).where(Team.id == team_id))
     if not team:
         return None
 
@@ -55,7 +55,7 @@ async def update_team(
 
 
 async def delete_team(db: AsyncSession, team_id: int) -> bool:
-    team = db.execute(select(Team).where(Team.id == team_id))
+    team = await db.execute(select(Team).where(Team.id == team_id))
     if not team:
         return False
 

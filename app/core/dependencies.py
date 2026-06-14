@@ -163,8 +163,8 @@ async def require_team_owner(
     return membership
 
 
-async def require_role(*allowed_roles: str):
-    async def dependency(
+def require_role(*allowed_roles: str):
+    def dependency(
         membership: TeamMember = Depends(get_team_membership),
     ):
         if membership.role not in allowed_roles:

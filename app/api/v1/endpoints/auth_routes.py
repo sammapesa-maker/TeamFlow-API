@@ -40,7 +40,7 @@ async def refresh(
 async def logout(
     token: auth_schemas.RefreshTokenIn, db: AsyncSession = Depends(get_db)
 ):
-    return await auth_service.logout(token=token.token, db=db)
+    await auth_service.logout(token=token.token, db=db)
 
 
 @router.post(path="/login", response_model=auth_schemas.TokenResponse, status_code=status.HTTP_200_OK)
@@ -76,6 +76,6 @@ async def update_user(
     return await auth_service.update_profile(data=data, user=user, db=db)
 
 
-@router.delete(path="/me", response_model=auth_schemas.UserResponse, status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(path="/me", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    return await auth_service.delete_user_service(user=user, db=db)
+    await auth_service.delete_user_service(user=user, db=db)

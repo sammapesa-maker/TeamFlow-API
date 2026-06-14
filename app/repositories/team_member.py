@@ -28,22 +28,16 @@ async def create_team_member(
         return None  # likely duplicate due to UniqueConstraint
 
 
-async def get_team_member_by_id(
-    db: AsyncSession, member_id: int
-):
+async def get_team_member_by_id(db: AsyncSession, member_id: int):
     results = await db.execute(select(TeamMember).where(TeamMember.id == member_id))
     return results
 
 
-async def get_team_member(
-    db: AsyncSession, user_id: int, team_id: int
-):
-    return (
-        db.execute(select(TeamMember)
-        .where(
+async def get_team_member(db: AsyncSession, user_id: int, team_id: int):
+    return db.execute(
+        select(TeamMember).where(
             TeamMember.user_id == user_id,
             TeamMember.team_id == team_id,
-        )
         )
     )
 
@@ -64,7 +58,7 @@ async def update_team_member(
     role: Optional[str] = None,
     status: Optional[str] = None,
 ):
-    member = db.execute(select(TeamMember).where(TeamMember.id == member_id))
+    member = await db.execute(select(TeamMember).where(TeamMember.id == member_id))
     if not member:
         return None
 
@@ -79,7 +73,7 @@ async def update_team_member(
 
 
 async def delete_team_member(db: AsyncSession, member_id: int) -> bool:
-    member = db.execute(select(TeamMember).where(TeamMember.id == member_id))
+    member = await db.execute(select(TeamMember).where(TeamMember.id == member_id))
     if not member:
         return False
 
@@ -89,12 +83,10 @@ async def delete_team_member(db: AsyncSession, member_id: int) -> bool:
 
 
 async def remove_user_from_team(db: AsyncSession, user_id: int, team_id: int) -> bool:
-    member = (
-        db.execute(select(TeamMember)
-        .where(
+    member = db.execute(
+        select(TeamMember).where(
             TeamMember.user_id == user_id,
             TeamMember.team_id == team_id,
-        )
         )
     )
     if not member:

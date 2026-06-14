@@ -53,7 +53,6 @@ async def delete_user_route(
     user_id: int, db: AsyncSession = Depends(get_db), _=Depends(get_current_superuser)
 ):
     await superuser.delete_user(db=db, user_id=user_id)
-    return {"status": "deleted"}
 
 
 @router.patch("/users/{user_id}/promote-to-superuser", response_model=UserResponse, status_code=status.HTTP_200_OK)

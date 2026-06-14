@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import (
     get_db,
@@ -10,7 +10,7 @@ from app.schemas.team_member import (
     TeamMemberCreate,
     TeamMemberRead,
     TeamMemberReadDetailed,
-    TeamMemberUpdate
+    TeamMemberUpdate,
 )
 from app.services.team_member import (
     add_team_member_service,
@@ -22,13 +22,13 @@ from app.services.team_member import (
 router = APIRouter(prefix="/team-members", tags=["Team Members"])
 
 
-@router.post("/", response_model=TeamMemberRead)
-def add_member(
+@router.post("/", response_model=TeamMemberRead, status_code=status.HTTP_201_CREATED)
+async def add_member(
     payload: TeamMemberCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _: None = Depends(require_team_admin),  # only admin/owner can invite
 ):
-    return add_team_member_service(
+    return await add_team_member_service(
         db=db,
         user_id=payload.user_id,
         team_id=payload.team_id,
@@ -36,33 +36,33 @@ def add_member(
     )
 
 
-@router.get("/", response_model=list[TeamMemberRead])
-def get_members(
+@router.get("/", response_model=list[TeamMemberRead], status_code=status.HTTP_200_OK)
+async def get_members(
     member_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _: None = Depends(require_team_member),
 ):
     # to add search, filter, sort and paginate
-    return get_team_member_service(db, member_id)
+    return await get_team_member_service(db, member_id)
 
 
-@router.get("/{member_id}", response_model=TeamMemberReadDetailed)
-def get_member(
+@router.get("/{member_id}", response_model=TeamMemberReadDetailed, status_code=status.HTTP_200_OK)
+async def get_member(
     member_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _: None = Depends(require_team_member),
 ):
-    return get_team_member_service(db, member_id)
+    return await get_team_member_service(db, member_id)
 
 
-@router.patch("/{member_id}", response_model=TeamMemberRead)
-def update_member(
+@router.patch("/{member_id}", response_model=TeamMemberRead, status_code=status.HTTP_200_OK)
+async def update_member(
     member_id: int,
     payload: TeamMemberUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _: None = Depends(require_team_admin),
 ):
-    return update_team_member_service(
+    return await update_team_member_service(
         db=db,
         member_id=member_id,
         role=payload.role,
@@ -70,10 +70,10 @@ def update_member(
     )
 
 
-@router.delete("/{member_id}", response_model=TeamMemberRead)
-def remove_member(
+@router.delete("/{member_id}", response_model=TeamMemberRead, status_code=status.HTTP_200_OK)
+async def remove_member(
     member_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _: None = Depends(require_team_admin),
 ):
-    return remove_team_member_service(db, member_id)
+    return await remove_team_member_service(db, member_id)

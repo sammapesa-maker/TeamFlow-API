@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user, get_db
 from app.models.user import User
@@ -19,13 +19,13 @@ from app.services.team import (
 router = APIRouter(prefix="/teams", tags=["Teams"])
 
 
-@router.post("/", response_model=TeamRead)
-def create_team(
+@router.post("/", response_model=TeamRead, status_code=status.HTTP_201_CREATED)
+async def create_team(
     payload: TeamCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    return create_team_service(
+    return await create_team_service(
         db=db,
         name=payload.name,
         user=user,
@@ -33,37 +33,37 @@ def create_team(
     )
 
 
-@router.get("/{team_id}", response_model=TeamRead)
-def get_team(
+@router.get("/{team_id}", response_model=TeamRead, status_code=status.HTTP_200_OK)
+async def get_team(
     team_id: int,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    return get_team_service(user, db, team_id)
+    return await get_team_service(user, db, team_id)
 
 
-@router.get("/", response_model=list[TeamRead])
-def list_teams(
+@router.get("/", response_model=list[TeamRead], status_code=status.HTTP_200_OK)
+async def list_teams(
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     # add filtering, sorting, searching and pagination
-    return list_teams_service(user, db, skip, limit)
+    return await list_teams_service(user, db, skip, limit)
 
 
 # -----------------------
 # UPDATE TEAM
 # -----------------------
-@router.patch("/{team_id}", response_model=TeamRead)
-def update_team(
+@router.patch("/{team_id}", response_model=TeamRead, status_code=status.HTTP_200_OK)
+async def update_team(
     team_id: int,
     payload: TeamUpdate,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    return update_team_service(
+    return await update_team_service(
         user=user,
         db=db,
         team_id=team_id,
@@ -75,10 +75,10 @@ def update_team(
 # -----------------------
 # DELETE TEAM
 # -----------------------
-@router.delete("/{team_id}")
-def delete_team(
+@router.delete("/{team_id}", status_code=status.HTTP_200_OK)
+async def delete_team(
     team_id: int,
-    db: Session = Depends(get_db),
-    user:User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    return delete_team_service(user, db, team_id)
+    return await delete_team_service(user, db, team_id)

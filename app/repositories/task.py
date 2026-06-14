@@ -3,6 +3,7 @@ from typing import Optional
 from app.models.task import Task
 from sqlalchemy import select
 
+
 async def create_task(
     db: AsyncSession,
     title: str,
@@ -47,7 +48,7 @@ async def update_task(
     priority: Optional[str] = None,
     assigned_to_id: Optional[int] = None,
 ):
-    task = db.execute(select(Task).where(Task.id == task_id))
+    task = await db.execute(select(Task).where(Task.id == task_id))
     if not task:
         return None
 
@@ -68,7 +69,7 @@ async def update_task(
 
 
 async def delete_task(db: AsyncSession, task_id: int) -> bool:
-    task = db.execute(select(Task).where(Task.id == task_id))
+    task = await db.execute(select(Task).where(Task.id == task_id))
     if not task:
         return False
 

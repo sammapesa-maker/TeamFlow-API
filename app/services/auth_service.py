@@ -145,8 +145,6 @@ async def logout(token: str, db: AsyncSession):
 
     await revoke_refresh_token(jti, db)
 
-    return {"message": "Logged out"}
-
 
 async def login_form(form_data: OAuth2PasswordRequestForm, db: AsyncSession):
     username = form_data.username
