@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_current_user, get_db
+from app.core.dependencies import (
+    get_current_user,
+    get_db,
+    require_admin_or_owner,
+    require_team_member,
+    require_team_owner
+)
 from app.models.user import User
 from app.schemas.team import (
     TeamCreate,
@@ -37,9 +43,9 @@ async def create_team(
 async def get_team(
     team_id: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    _ = Depends(require_team_member),
 ):
-    return await get_team_service(user, db, team_id)
+    return await get_team_service(db=db, team_id=team_id)
 
 
 @router.get("/", response_model=list[TeamRead], status_code=status.HTTP_200_OK)
@@ -47,7 +53,7 @@ async def list_teams(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user)
 ):
     # add filtering, sorting, searching and pagination
     return await list_teams_service(user, db, skip, limit)
@@ -61,10 +67,9 @@ async def update_team(
     team_id: int,
     payload: TeamUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    _ = Depends(require_admin_or_owner),
 ):
     return await update_team_service(
-        user=user,
         db=db,
         team_id=team_id,
         name=payload.name,
@@ -79,6 +84,6 @@ async def update_team(
 async def delete_team(
     team_id: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    _ = Depends(require_team_owner),
 ):
-    return await delete_team_service(user, db, team_id)
+    return await delete_team_service(db, team_id)

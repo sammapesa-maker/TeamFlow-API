@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from app.models.team import Team
+from app.models.team_member import TeamMember
 from sqlalchemy import select
 
 
@@ -23,10 +24,13 @@ async def get_team_by_name(db: AsyncSession, name: str):
     results = await db.execute(select(Team).where(Team.name == name))
     return results
 
-
-async def get_teams_by_owner(db: AsyncSession, owner_id: int):
-    results = await db.execute(select(Team).where(Team.owner_id == owner_id))
-    return results
+async def get_user_teams(db: AsyncSession, user_id: int):
+    results = await db.execute(
+        select(Team)
+        .join(TeamMember)
+        .where(TeamMember.user_id == user_id)
+    )
+    return results.scalars().all()
 
 
 async def list_teams(db: AsyncSession, skip: int = 0, limit: int = 100):
@@ -45,9 +49,9 @@ async def update_team(
         return None
 
     if name is not None:
-        team.name = name  # ty:ignore[unresolved-attribute]
+        team.name = name  # ty:ignore[invalid-assignment]
     if description is not None:
-        team.description = description  # ty:ignore[unresolved-attribute]
+        team.description = description  # ty:ignore[invalid-assignment]
 
     await db.commit()
     await db.refresh(team)

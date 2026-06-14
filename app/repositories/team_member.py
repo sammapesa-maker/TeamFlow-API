@@ -34,7 +34,7 @@ async def get_team_member_by_id(db: AsyncSession, member_id: int):
 
 
 async def get_team_member(db: AsyncSession, user_id: int, team_id: int):
-    return db.execute(
+    return await db.execute(
         select(TeamMember).where(
             TeamMember.user_id == user_id,
             TeamMember.team_id == team_id,

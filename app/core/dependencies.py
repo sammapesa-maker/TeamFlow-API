@@ -179,4 +179,3 @@ def require_role(*allowed_roles: str):
 
 # Prebuilt shortcuts
 require_admin_or_owner = require_role(OWNER, ADMIN)
-require_owner_only = require_role(OWNER)
