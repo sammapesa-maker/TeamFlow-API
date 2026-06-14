@@ -1,10 +1,11 @@
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import auth_schemas
 from app.services import auth_service
 from app.core.dependencies import get_db, get_current_user
 from app.models.user import User
+
 router = APIRouter()
 
 
@@ -13,46 +14,68 @@ router = APIRouter()
     response_model=auth_schemas.UserResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def register_user(user_data: auth_schemas.UserRegister, db: Session = Depends(get_db)):
-    user = auth_service.register_user(db=db, user_data=user_data)
-    return user
-
-
-@router.post(path="/login-json", response_model=auth_schemas.TokenResponse)
-def login_json(user_data: auth_schemas.UserLogin, db: Session = Depends(get_db)):
-    return auth_service.login_user(user_data=user_data, db=db)
-
-
-@router.post(path="/refresh", response_model=auth_schemas.TokenResponse)
-def refresh(token: auth_schemas.RefreshTokenIn, db: Session = Depends(get_db)):
-    return auth_service.refresh_token(token=token.token, db=db)
-
-
-@router.post(path="/logout")
-def logout(token: auth_schemas.RefreshTokenIn, db: Session = Depends(get_db)):
-    return auth_service.logout(token=token.token, db=db)
-
-
-@router.post(path="/login", response_model=auth_schemas.TokenResponse)
-def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+async def register_user(
+    user_data: auth_schemas.UserRegister, db: AsyncSession = Depends(get_db),
+    status_code=status.HTTP_201_CREATED
 ):
-    return auth_service.login_form(form_data=form_data, db=db)
-
-@router.patch(path="/change-password")
-def change_password(data: auth_schemas.ChangePassword, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return auth_service.change_password(data=data, db=db, user_id=user.id) # type: ignore
-
-# === USER ENDPOINTS ===
-
-@router.get(path="/me", response_model=auth_schemas.UserResponse)
-def get_user(user: User = Depends(get_current_user)):
+    user = await auth_service.register_user(db=db, user_data=user_data)
     return user
 
-@router.patch(path="/me", response_model=auth_schemas.UserResponse)
-def update_user(data: auth_schemas.UserUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return auth_service.update_profile(data=data, user=user, db=db)
 
-@router.delete(path="/me", response_model=auth_schemas.UserResponse)
-def delete_user(user: User = Depends(get_current_user)):
-    pass
+@router.post(path="/login-json", response_model=auth_schemas.TokenResponse, status_code=status.HTTP_200_OK)
+async def login_json(
+    user_data: auth_schemas.UserLogin, db: AsyncSession = Depends(get_db)
+):
+    return await auth_service.login_user(user_data=user_data, db=db)
+
+
+@router.post(path="/refresh", response_model=auth_schemas.TokenResponse, status_code=status.HTTP_201_CREATED)
+async def refresh(
+    token: auth_schemas.RefreshTokenIn, db: AsyncSession = Depends(get_db)
+):
+    return await auth_service.refresh_token(token=token.token, db=db)
+
+
+@router.post(path="/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+    token: auth_schemas.RefreshTokenIn, db: AsyncSession = Depends(get_db)
+):
+    return await auth_service.logout(token=token.token, db=db)
+
+
+@router.post(path="/login", response_model=auth_schemas.TokenResponse, status_code=status.HTTP_200_OK)
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)
+):
+    return await auth_service.login_form(form_data=form_data, db=db)
+
+
+@router.patch(path="/change-password", status_code=status.HTTP_200_OK)
+async def change_password(
+    data: auth_schemas.ChangePassword,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return await auth_service.change_password(data=data, db=db, user_id=user.id)  # ty:ignore[invalid-argument-type]
+
+
+# === NORMAL USER ENDPOINTS ===
+
+
+@router.get(path="/me", response_model=auth_schemas.UserResponse, status_code=status.HTTP_200_OK)
+async def get_user(user: User = Depends(get_current_user)):
+    return user
+
+
+@router.patch(path="/me", response_model=auth_schemas.UserResponse, status_code=status.HTTP_200_OK)
+async def update_user(
+    data: auth_schemas.UserUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await auth_service.update_profile(data=data, user=user, db=db)
+
+
+@router.delete(path="/me", response_model=auth_schemas.UserResponse, status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    return await auth_service.delete_user_service(user=user, db=db)

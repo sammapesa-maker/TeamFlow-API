@@ -9,6 +9,7 @@ from app.core.config import get_settings
 from app.core.security import oauth2_scheme
 from app.models.user import User
 from app.repositories.user import get_user_by_id
+from app.services.team_member import get_user_team_membership_service
 
 from app.models.team_member import TeamMember
 
@@ -57,7 +58,7 @@ async def get_current_user(
             detail="Invalid token",
         )
 
-    user = get_user_by_id(user_id=user_id, db=db)
+    user = await get_user_by_id(user_id=user_id, db=db)
 
     if not user:
         raise HTTPException(
@@ -117,14 +118,8 @@ async def get_team_membership(
     if user.is_superuser:
         return None  # or fake membership if needed
 
-    membership = (
-        db.query(TeamMember)
-        .filter(
-            TeamMember.team_id == team_id,
-            TeamMember.user_id == user.id,
-        )
-        .first()
-    )
+    user_id: int = user.id  # ty:ignore[invalid-assignment]
+    membership = await get_user_team_membership_service(db=db, user_id=user_id, team_id=team_id)
 
     if not membership:
         raise HTTPException(

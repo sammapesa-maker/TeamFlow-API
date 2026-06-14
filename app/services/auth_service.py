@@ -17,6 +17,7 @@ from app.repositories.user import (
     get_user_by_username,
     update_user,
     update_user_password,
+    delete_user
 )
 from app.core.config import get_settings, Settings
 from jose import JWTError, jwt
@@ -36,9 +37,7 @@ ALGORITHM: str = settings.ALGORITHM
 
 async def register_user(user_data: UserRegister, db: AsyncSession):
     # Check if user already exists
-    if await get_user_by_email(email=user_data.email, db=db) or await get_user_by_username(
-        user_data.username, db
-    ):
+    if await get_user_by_email(email=user_data.email, db=db) or await get_user_by_username(user_data.username, db):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists"
         )
@@ -99,8 +98,7 @@ async def login_user(user_data: UserLogin, db: AsyncSession):
 async def refresh_token(token: str, db: AsyncSession):
     try:
         payload = jwt.decode(token=str(token), key=SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError as e:
-        print(f"Error : {e}")
+    except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
     if payload.get("type") != "refresh":
@@ -178,9 +176,10 @@ async def update_profile(data: auth_schemas.UserUpdate, user: User, db: AsyncSes
         if existing:
             raise HTTPException(status_code=400, detail="Email already in use")
 
-    return update_user(
-        user,
-        db,
+    user_id: int = user.id  # ty:ignore[invalid-assignment]
+    return await update_user(
+        user_id=user_id,
+        db=db,
         username=username,
         email=email,
     )
@@ -206,3 +205,8 @@ async def change_password(
 
     if user:
         return {"message": "Password updated successfully", "user_id": user.id}
+
+
+async def delete_user_service(user: User, db: AsyncSession):
+    user_id: int = user.id  # ty:ignore[invalid-assignment]
+    await delete_user(user_id=user_id, db=db)
