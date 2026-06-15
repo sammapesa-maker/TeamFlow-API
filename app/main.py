@@ -2,12 +2,12 @@ from fastapi import FastAPI
 from app.api.v1.router import v1_router
 
 app = FastAPI(
-    title="My Versioned API",
+    title="TeamFlow API",
     version="1.0.0"
 )
 
 # Root/Health check endpoint
-@app.get(path="/")
+@app.get(path="/health", tags=["Health"])
 def root():
     return {"status": "healthy"}
 

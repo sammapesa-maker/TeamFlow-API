@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.core.dependencies import get_db
-
+from app.models.user import User
 from app.services.task import (
     create_task_service,
     get_task_service,
@@ -20,34 +18,30 @@ from app.schemas.task import (
 from app.core.dependencies import (
     require_team_member,
     require_team_admin,
+    get_current_active_user,
+    get_db
 )
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
-# -----------------------
-# CREATE TASK
-# -----------------------
 @router.post("/", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
 async def create_task(
     payload: TaskCreate,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_active_user),
     _: None = Depends(require_team_member),
 ):
-    # creator_id should come from auth in real system
     return await create_task_service(
         db=db,
         title=payload.title,
         team_id=payload.team_id,
-        creator_id=payload.team_id,  # replace with current_user.id
+        creator_id=user.id,  # ty:ignore[invalid-argument-type]
         description=payload.description,
         priority=payload.priority,
     )
 
 
-# -----------------------
-# GET TASK BY ID
-# -----------------------
 @router.get("/{task_id}", response_model=TaskRead, status_code=status.HTTP_200_OK)
 async def get_task(
     task_id: int,
