@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas import auth_schemas
 from app.services import auth_service
-from app.core.dependencies import get_db, get_current_user
+from app.core.dependencies import get_db, get_current_active_user
 from app.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["Authentication & Users"])
@@ -53,25 +53,25 @@ async def login(
 async def change_password(
     data: auth_schemas.ChangePassword,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_active_user),
 ):
     return await auth_service.change_password(data=data, db=db, user_id=user.id)  # ty:ignore[invalid-argument-type]
 
 
 @router.get(path="/me", response_model=auth_schemas.UserResponse, status_code=status.HTTP_200_OK)
-async def get_user(user: User = Depends(get_current_user)):
+async def get_user(user: User = Depends(get_current_active_user)):
     return user
 
 
 @router.patch(path="/me", response_model=auth_schemas.UserResponse, status_code=status.HTTP_200_OK)
 async def update_user(
     data: auth_schemas.UserUpdate,
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
     return await auth_service.update_profile(data=data, user=user, db=db)
 
 
 @router.delete(path="/me", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def delete_user(user: User = Depends(get_current_active_user), db: AsyncSession = Depends(get_db)):
     await auth_service.delete_user_service(user=user, db=db)
