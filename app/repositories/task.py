@@ -9,10 +9,10 @@ async def create_task(
     title: str,
     team_id: int,
     creator_id: int,
-    description: str = None,  # type: ignore
+    description: str | None = None,  
     status: str = "todo",
     priority: str = "medium",
-    assigned_to_id: int = None,  # type: ignore
+    assigned_to_id: int | None = None,  
 ) -> Task:
     task = Task(
         title=title,
@@ -31,7 +31,7 @@ async def create_task(
 
 async def get_task_by_id(db: AsyncSession, task_id: int):
     results = await db.execute(select(Task).where(Task.id == task_id))
-    return results
+    return results.scalar_one_or_none()
 
 
 async def list_tasks(db: AsyncSession, skip: int = 0, limit: int = 100):
@@ -48,20 +48,20 @@ async def update_task(
     priority: Optional[str] = None,
     assigned_to_id: Optional[int] = None,
 ):
-    task = await db.execute(select(Task).where(Task.id == task_id))
+    task = await get_task_by_id(db, task_id)
     if not task:
         return None
 
     if title is not None:
-        task.title = title  # type:ignore
+        task.title = title 
     if description is not None:
-        task.description = description  # type:ignore
+        task.description = description 
     if status is not None:
-        task.status = status  # type:ignore
+        task.status = status 
     if priority is not None:
-        task.priority = priority  # type:ignore
+        task.priority = priority 
     if assigned_to_id is not None:
-        task.assigned_to_id = assigned_to_id  # type:ignore
+        task.assigned_to_id = assigned_to_id 
 
     await db.commit()
     await db.refresh(task)
@@ -69,7 +69,7 @@ async def update_task(
 
 
 async def delete_task(db: AsyncSession, task_id: int) -> bool:
-    task = await db.execute(select(Task).where(Task.id == task_id))
+    task = await get_task_by_id(db, task_id)
     if not task:
         return False
 

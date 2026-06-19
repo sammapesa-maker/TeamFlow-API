@@ -22,16 +22,17 @@ from app.core.dependencies import (
     get_db
 )
 
-router = APIRouter(prefix="/tasks", tags=["Tasks"])
+router = APIRouter(prefix="", tags=["Tasks"])
 
 
-@router.post("/", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
+@router.post("/teams/{team_id}/tasks", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
 async def create_task(
     payload: TaskCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_active_user),
     _: None = Depends(require_team_member),
 ):
+    # change here to allow team id
     return await create_task_service(
         db=db,
         title=payload.title,
@@ -42,7 +43,7 @@ async def create_task(
     )
 
 
-@router.get("/{task_id}", response_model=TaskRead, status_code=status.HTTP_200_OK)
+@router.get("/tasks/{task_id}", response_model=TaskRead, status_code=status.HTTP_200_OK)
 async def get_task(
     task_id: int,
     db: AsyncSession = Depends(get_db),
@@ -51,18 +52,19 @@ async def get_task(
     return await get_task_service(db, task_id)
 
 
-@router.get("/", response_model=list[TaskRead], status_code=status.HTTP_200_OK)
+@router.get("/teams/{team_id}/tasks", response_model=list[TaskRead], status_code=status.HTTP_200_OK)
 async def list_tasks(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
     _=Depends(require_team_member)
 ):
+    # change inputs
     # add filtering, searching, sorting and pagination
     return await list_tasks_service(db, skip, limit)
 
 
-@router.patch("/{task_id}", response_model=TaskRead, status_code=status.HTTP_200_OK)
+@router.patch("/tasks/{task_id}", response_model=TaskRead, status_code=status.HTTP_200_OK)
 async def update_task(
     task_id: int,
     payload: TaskUpdate,
@@ -80,7 +82,7 @@ async def update_task(
     )
 
 
-@router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(
     task_id: int,
     db: AsyncSession = Depends(get_db),

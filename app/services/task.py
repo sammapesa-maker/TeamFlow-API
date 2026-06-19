@@ -1,6 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 
+from app.models.team import Team
+from app.repositories.team import get_team_by_id
 from app.repositories.task import (
     create_task,
     get_task_by_id,
@@ -18,14 +20,18 @@ async def create_task_service(
     description: str | None = None,
     priority: str = "medium",
 ):
-    return await create_task(
-        db,
-        title=title,
-        team_id=team_id,
-        creator_id=creator_id,
-        description=description,  # type: ignore
-        priority=priority,
-    )
+    team: Team = await get_team_by_id(db, team_id)
+    if team:
+        return await create_task(
+            db,
+            title=title,
+            team_id=team_id,
+            creator_id=creator_id,
+            description=description,  # type: ignore
+            priority=priority,
+        )
+    else:
+        raise HTTPException(status_code=404, detail="Team not found")
 
 
 async def get_task_service(db: AsyncSession, task_id: int):
