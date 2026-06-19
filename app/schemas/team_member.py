@@ -10,7 +10,6 @@ class TeamMemberBase(BaseModel):
 
 class TeamMemberCreate(TeamMemberBase):
     user_id: int = Field(..., gt=0)
-    team_id: int = Field(..., gt=0)
     
 class TeamMemberUpdate(BaseModel):
     role: Optional[Literal["owner", "admin", "member"]] = None

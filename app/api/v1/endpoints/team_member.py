@@ -5,6 +5,8 @@ from app.core.dependencies import (
     get_db,
     require_team_admin,
     require_team_member,
+    require_team_admin_from_member,
+    require_team_member_from_member
 )
 from app.schemas.team_member import (
     TeamMemberCreate,
@@ -17,50 +19,52 @@ from app.services.team_member import (
     get_team_member_service,
     remove_team_member_service,
     update_team_member_service,
+    list_team_members_service
 )
 
-router = APIRouter(prefix="/team-members", tags=["Team Members"])
+router = APIRouter(prefix="", tags=["Team Members"])
 
 
-@router.post("/", response_model=TeamMemberRead, status_code=status.HTTP_201_CREATED)
+@router.post("/teams/{team_id}/members", response_model=TeamMemberRead, status_code=status.HTTP_201_CREATED)
 async def add_member(
     payload: TeamMemberCreate,
+    team_id:int,
     db: AsyncSession = Depends(get_db),
     _: None = Depends(require_team_admin),  # only admin/owner can invite
 ):
     return await add_team_member_service(
         db=db,
         user_id=payload.user_id,
-        team_id=payload.team_id,
+        team_id=team_id,
         role=payload.role,
     )
 
 
-@router.get("/", response_model=list[TeamMemberRead], status_code=status.HTTP_200_OK)
+@router.get("/teams/{team_id}/members", response_model=list[TeamMemberRead], status_code=status.HTTP_200_OK)
 async def get_members(
-    member_id: int,
+    team_id: int,
     db: AsyncSession = Depends(get_db),
     _: None = Depends(require_team_member),
 ):
     # to add search, filter, sort and paginate
-    return await get_team_member_service(db, member_id)
+    return await list_team_members_service(db, team_id)
 
 
-@router.get("/{member_id}", response_model=TeamMemberReadDetailed, status_code=status.HTTP_200_OK)
+@router.get("/team-member/{member_id}", response_model=TeamMemberRead, status_code=status.HTTP_200_OK)
 async def get_member(
     member_id: int,
     db: AsyncSession = Depends(get_db),
-    _: None = Depends(require_team_member),
+    _: None = Depends(require_team_member_from_member),
 ):
     return await get_team_member_service(db, member_id)
 
 
-@router.patch("/{member_id}", response_model=TeamMemberRead, status_code=status.HTTP_200_OK)
+@router.patch("/team-member/{member_id}", response_model=TeamMemberRead, status_code=status.HTTP_200_OK)
 async def update_member(
     member_id: int,
     payload: TeamMemberUpdate,
     db: AsyncSession = Depends(get_db),
-    _: None = Depends(require_team_admin),
+    _: None = Depends(require_team_admin_from_member),
 ):
     return await update_team_member_service(
         db=db,
@@ -70,10 +74,10 @@ async def update_member(
     )
 
 
-@router.delete("/{member_id}", response_model=TeamMemberRead, status_code=status.HTTP_200_OK)
+@router.delete("/team-member/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_member(
     member_id: int,
     db: AsyncSession = Depends(get_db),
-    _: None = Depends(require_team_admin),
+    _: None = Depends(require_team_admin_from_member),
 ):
-    return await remove_team_member_service(db, member_id)
+    await remove_team_member_service(db, member_id)

@@ -16,17 +16,17 @@ async def create_user(
 
 async def get_user_by_email(email: str, db: AsyncSession):
     results = await db.execute(select(User).where(User.email == email))
-    return results
+    return results.scalar_one_or_none()
 
 
 async def get_user_by_username(username: str, db: AsyncSession):
     results = await db.execute(select(User).where(User.username == username))
-    return results
+    return results.scalar_one_or_none()
 
 
 async def get_user_by_id(user_id: int, db: AsyncSession):
     results = await db.execute(select(User).where(User.id == user_id))
-    return results
+    return results.scalar_one_or_none()
 
 
 async def update_user(

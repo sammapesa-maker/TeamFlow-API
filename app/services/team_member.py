@@ -64,7 +64,9 @@ async def list_team_members_service(db: AsyncSession, team_id: int):
 
 
 async def list_user_teams_service(db: AsyncSession, user_id: int):
-    return await list_user_teams(db, user_id)
+    results = await list_user_teams(db, user_id)
+    results = list(results)
+    return results
 
 
 # -----------------------
@@ -102,7 +104,7 @@ async def remove_team_member_service(db: AsyncSession, member_id: int):
     if not member:
         raise HTTPException(status_code=404, detail="Team member not found")
 
-    return await update_team_member(
+    await update_team_member(
         db,
         member_id=member_id,
         status="removed",
