@@ -8,6 +8,7 @@ from app.repositories.team import (
     create_team,
     update_team,
     delete_team,
+    get_user_teams
 )
 from app.repositories.team_member import create_team_member
 
@@ -43,7 +44,7 @@ async def get_team_service(db: AsyncSession, team_id: int):
 async def list_teams_service(
     user: User, db: AsyncSession
 ):
-    return user.team_memberships
+    return await get_user_teams(db, user.id)  # ty:ignore[invalid-argument-type]
 
 
 

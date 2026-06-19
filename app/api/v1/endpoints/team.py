@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import (
-    get_current_user,
+    get_current_active_user,
     get_db,
     require_team_admin,
     require_team_member,
@@ -29,7 +29,7 @@ router = APIRouter(prefix="/teams", tags=["Teams"])
 async def create_team(
     payload: TeamCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_active_user),
 ):
     return await create_team_service(
         db=db,
@@ -51,7 +51,7 @@ async def get_team(
 @router.get("/", response_model=list[TeamRead], status_code=status.HTTP_200_OK)
 async def list_teams(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user)
+    user: User = Depends(get_current_active_user)
 ):
     # add filtering, sorting, searching and pagination
     return await list_teams_service(user, db)
