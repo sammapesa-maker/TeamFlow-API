@@ -17,7 +17,7 @@ from app.repositories.user import (
     get_user_by_username,
     update_user,
     update_user_password,
-    delete_user
+    delete_user,
 )
 from app.core.config import get_settings, Settings
 from jose import JWTError, jwt
@@ -37,7 +37,9 @@ ALGORITHM: str = settings.ALGORITHM
 
 async def register_user(user_data: UserRegister, db: AsyncSession):
     # Check if user already exists
-    if await get_user_by_email(email=user_data.email, db=db) or await get_user_by_username(user_data.username, db):
+    if await get_user_by_email(
+        email=user_data.email, db=db
+    ) or await get_user_by_username(user_data.username, db):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists"
         )
@@ -81,15 +83,15 @@ async def login_user(user_data: UserLogin, db: AsyncSession):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
         )
 
-    access_token = await create_access_token(user_id=user.id)
-    refresh_token, jti = await create_refresh_token(user_id=user.id)
+    access_token = create_access_token(user_id=user.id)
+    refresh_token, jti = create_refresh_token(user_id=user.id)
 
     await create_refresh_token_entry(
         user_id=user.id,
         token=refresh_token,
         jti=jti,
         expires_at=datetime.now(timezone.utc) + timedelta(days=7),
-        db=db
+        db=db,
     )
 
     return {"access_token": access_token, "refresh_token": refresh_token}
@@ -122,8 +124,8 @@ async def refresh_token(token: str, db: AsyncSession):
     await revoke_refresh_token(jti, db)
 
     # Issue new tokens
-    access_token = await create_access_token(user_id)
-    new_refresh_token, new_jti = await create_refresh_token(user_id)
+    access_token = create_access_token(user_id)
+    new_refresh_token, new_jti = create_refresh_token(user_id)
 
     await create_refresh_token_entry(
         user_id=user_id,
