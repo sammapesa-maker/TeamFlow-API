@@ -43,8 +43,8 @@ async def get_task_service(db: AsyncSession, task_id: int):
     return task
 
 
-async def list_tasks_service(db: AsyncSession):
-    return await list_tasks(db)
+async def list_tasks_service(db: AsyncSession, team_id: int):
+    return await list_tasks(db, team_id)
 
 
 async def update_task_service(

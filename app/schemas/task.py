@@ -2,21 +2,22 @@ from pydantic import BaseModel, Field
 from typing import Optional, Literal
 from datetime import datetime
 
+
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=30)
     description: Optional[str] = None
-    status: Literal["todo", "in_progress", "done"] = "todo"
+    status: Literal["todo", "progress", "done"] = "todo"
     priority: Literal["low", "medium", "high"] = "medium"
 
 
 class TaskCreate(TaskBase):
-    team_id: int = Field(..., gt=0)
-    assigned_to_id: Optional[int] = Field(None, gt=0)
+    pass
+
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=30)
     description: Optional[str] = None
-    status: Optional[Literal["todo", "in_progress", "done"]] = None
+    status: Optional[Literal["todo", "progress", "done"]] = None
     priority: Optional[Literal["low", "medium", "high"]] = None
     assigned_to_id: Optional[int] = Field(None, gt=0)
 

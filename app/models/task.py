@@ -10,7 +10,7 @@ class Task(Base, TimestampMixin):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(30), nullable=False)
     description = Column(Text, nullable=True)
-    status = Column(String(10), default="todo", nullable=False)  # todo/in_progress/done
+    status = Column(String(10), default="todo", nullable=False)  # todo/progress/done
     priority = Column(String(10), default="medium", nullable=False)  # low/medium/high
     team_id = Column(Integer, ForeignKey("teams.id"), nullable=False)
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
