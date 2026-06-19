@@ -81,23 +81,10 @@ async def get_current_active_user(
     return current_user
 
 
-# -------------------------
-# SUPERUSER
-# -------------------------
-async def get_current_superuser(
-    current_user: User = Depends(get_current_user),
-) -> User:
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough privileges",
-        )
-    return current_user
 
-
-# =========================
+# ---------------------------
 # TEAM ROLE CONSTANTS
-# =========================
+# ---------------------------
 
 OWNER = "owner"
 ADMIN = "admin"
@@ -106,18 +93,15 @@ MEMBER = "member"
 ADMIN_ROLES = {OWNER, ADMIN}
 
 
-# =========================
+# ---------------------------
 # CORE RESOLVERS
-# =========================
+# ---------------------------
 
 async def get_team_membership(
     team_id: int,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ) -> TeamMember | None:
-
-    if user.is_superuser:
-        return None
 
     membership = await get_user_team_membership_service(
         db=db,
@@ -139,10 +123,7 @@ async def get_team_membership_from_member(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ) -> TeamMember | None:
-
-    if user.is_superuser:
-        return None
-
+    
     # get team_id from member_id
     team_id = await get_team_id_from_member_id(db, member_id)
 
@@ -156,9 +137,9 @@ async def get_team_membership_from_member(
     return await get_team_membership(team_id, db, user)
 
 
-# =========================
+# ---------------------------
 # ROLE CHECKS (TEAM_ID)
-# =========================
+# ---------------------------
 
 async def require_team_member(
     membership: TeamMember = Depends(get_team_membership),
@@ -170,9 +151,6 @@ async def require_team_admin(
     membership: TeamMember = Depends(get_team_membership),
     user: User = Depends(get_current_active_user),
 ):
-    if user.is_superuser:
-        return user
-
     if membership.role not in ADMIN_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -186,9 +164,6 @@ async def require_team_owner(
     membership: TeamMember = Depends(get_team_membership),
     user: User = Depends(get_current_active_user),
 ):
-    if user.is_superuser:
-        return user
-
     if membership.role != OWNER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -197,9 +172,9 @@ async def require_team_owner(
 
     return membership
 
-# =========================
+# ---------------------------
 # ROLE CHECKS (MEMBER_ID)
-# =========================
+# ---------------------------
 
 async def require_team_member_from_member(
     membership: TeamMember = Depends(get_team_membership_from_member),
@@ -211,9 +186,6 @@ async def require_team_admin_from_member(
     membership: TeamMember = Depends(get_team_membership_from_member),
     user: User = Depends(get_current_active_user),
 ):
-    if user.is_superuser:
-        return user
-
     if membership.role not in ADMIN_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

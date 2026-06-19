@@ -40,7 +40,7 @@ async def get_team_id_from_member_id(db: AsyncSession, member_id: int):
     return result.scalar_one_or_none()
 
 
-
+# Checking if a user is part of a team
 async def get_team_member(db: AsyncSession, user_id: int, team_id: int):
     results = await db.execute(
         select(TeamMember).where(
@@ -55,10 +55,6 @@ async def list_team_members(db: AsyncSession, team_id: int):
     results = await db.execute(select(TeamMember).where(TeamMember.team_id == team_id))
     return results.scalars().all()
 
-
-async def list_user_teams(db: AsyncSession, user_id: int):
-    results = await db.execute(select(TeamMember).where(TeamMember.user_id == user_id))
-    return results.scalars().all()
 
 
 async def update_team_member(

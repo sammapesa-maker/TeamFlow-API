@@ -50,13 +50,11 @@ async def get_team(
 
 @router.get("/", response_model=list[TeamRead], status_code=status.HTTP_200_OK)
 async def list_teams(
-    skip: int = 0,
-    limit: int = 100,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
     # add filtering, sorting, searching and pagination
-    return await list_teams_service(user, db, skip, limit)
+    return await list_teams_service(user, db)
 
 
 # -----------------------

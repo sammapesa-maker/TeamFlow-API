@@ -27,7 +27,7 @@ async def create_task_service(
             title=title,
             team_id=team_id,
             creator_id=creator_id,
-            description=description,  # type: ignore
+            description=description,
             priority=priority,
         )
     else:
@@ -43,8 +43,8 @@ async def get_task_service(db: AsyncSession, task_id: int):
     return task
 
 
-async def list_tasks_service(db: AsyncSession, skip: int = 0, limit: int = 100):
-    return await list_tasks(db, skip, limit)
+async def list_tasks_service(db: AsyncSession):
+    return await list_tasks(db)
 
 
 async def update_task_service(

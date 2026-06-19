@@ -44,21 +44,13 @@ async def register_user(user_data: UserRegister, db: AsyncSession):
             status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists"
         )
 
-    try:
-        user = await create_user(
-            email=user_data.email,
-            username=user_data.username,
-            hashed_password=hash_password(user_data.password.get_secret_value()),
-            db=db,
-        )
-        return user
-
-    except Exception as e:  # Any unhandled exceptions during user creation
-        print(f"Error during user registration: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred during registration",
-        )
+    user = await create_user(
+        email=user_data.email,
+        username=user_data.username,
+        hashed_password=hash_password(user_data.password.get_secret_value()),
+        db=db,
+    )
+    return user
 
 
 async def login_user(user_data: UserLogin, db: AsyncSession):

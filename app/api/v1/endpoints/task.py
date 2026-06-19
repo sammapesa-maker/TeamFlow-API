@@ -54,14 +54,12 @@ async def get_task(
 
 @router.get("/teams/{team_id}/tasks", response_model=list[TaskRead], status_code=status.HTTP_200_OK)
 async def list_tasks(
-    skip: int = 0,
-    limit: int = 100,
     db: AsyncSession = Depends(get_db),
     _=Depends(require_team_member)
 ):
     # change inputs
     # add filtering, searching, sorting and pagination
-    return await list_tasks_service(db, skip, limit)
+    return await list_tasks_service(db)
 
 
 @router.patch("/tasks/{task_id}", response_model=TaskRead, status_code=status.HTTP_200_OK)

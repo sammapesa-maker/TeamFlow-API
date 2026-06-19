@@ -34,8 +34,8 @@ async def get_task_by_id(db: AsyncSession, task_id: int):
     return results.scalar_one_or_none()
 
 
-async def list_tasks(db: AsyncSession, skip: int = 0, limit: int = 100):
-    results = await db.execute(select(Task).offset(skip).limit(limit))
+async def list_tasks(db: AsyncSession):
+    results = await db.execute(select(Task))
     return results.scalars().all()
 
 

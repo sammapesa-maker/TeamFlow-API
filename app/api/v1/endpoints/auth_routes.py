@@ -6,7 +6,7 @@ from app.services import auth_service
 from app.core.dependencies import get_db, get_current_user
 from app.models.user import User
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["Authentication & Users"])
 
 
 @router.post(
@@ -56,9 +56,6 @@ async def change_password(
     user: User = Depends(get_current_user),
 ):
     return await auth_service.change_password(data=data, db=db, user_id=user.id)  # ty:ignore[invalid-argument-type]
-
-
-# === NORMAL USER ENDPOINTS ===
 
 
 @router.get(path="/me", response_model=auth_schemas.UserResponse, status_code=status.HTTP_200_OK)

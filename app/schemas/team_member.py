@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal, Optional, List
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -24,24 +24,3 @@ class TeamMemberRead(TeamMemberBase):
 
     class Config:
         from_attributes = True
-
-# Optional detailed schemas for rich responses
-class UserSimple(BaseModel):
-    id: int
-    email: str
-
-    class Config:
-        from_attributes = True
-
-
-class TeamSimple(BaseModel):
-    id: int
-    name: str
-
-    class Config:
-        from_attributes = True
-
-
-class TeamMemberReadDetailed(TeamMemberRead):
-    user: UserSimple
-    team: TeamSimple

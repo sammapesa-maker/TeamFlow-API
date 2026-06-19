@@ -11,7 +11,6 @@ from app.core.dependencies import (
 from app.schemas.team_member import (
     TeamMemberCreate,
     TeamMemberRead,
-    TeamMemberReadDetailed,
     TeamMemberUpdate,
 )
 from app.services.team_member import (

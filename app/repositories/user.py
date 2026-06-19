@@ -32,7 +32,6 @@ async def get_user_by_id(user_id: int, db: AsyncSession):
 async def update_user(
     user_id: int,
     db: AsyncSession,
-    *,
     username: Optional[str] = None,
     email: Optional[str] = None,
 ) -> User:
@@ -77,12 +76,9 @@ async def delete_user(user_id: int, db: AsyncSession) -> None:
 
 
 async def get_all_users(
-    db: AsyncSession,
-    *,
-    skip: int = 0,
-    limit: int = 100,
+    db: AsyncSession
 ):
-    results = await db.execute(select(User).offset(skip).limit(limit))
+    results = await db.execute(select(User))
     return results.scalars().all()
 
 
@@ -92,26 +88,4 @@ async def update_user_password(
     user.hashed_password = hashed_password  # type: ignore
     await db.commit()
     await db.refresh(user)
-    return user
-
-
-async def promote_to_superuser(db: AsyncSession, user_id: int) -> User:
-    user = await get_user_by_id(user_id, db)
-
-    if not user.is_superuser:
-        user.is_superuser = True
-        await db.commit()
-        await db.refresh(user)
-
-    return user
-
-
-async def demote_superuser(db: AsyncSession, user_id: int) -> User:
-    user = await get_user_by_id(user_id, db)
-
-    if user.is_superuser:
-        user.is_superuser = False
-        await db.commit()
-        await db.refresh(user)
-
     return user

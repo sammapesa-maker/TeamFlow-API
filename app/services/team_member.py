@@ -6,7 +6,6 @@ from app.repositories.team_member import (
     get_team_member_by_id,
     get_team_member,
     list_team_members,
-    list_user_teams,
     update_team_member,
 )
 
@@ -62,11 +61,6 @@ async def get_user_team_membership_service(
 async def list_team_members_service(db: AsyncSession, team_id: int):
     return await list_team_members(db, team_id)
 
-
-async def list_user_teams_service(db: AsyncSession, user_id: int):
-    results = await list_user_teams(db, user_id)
-    results = list(results)
-    return results
 
 
 # -----------------------
