@@ -4,9 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import (
     get_db,
     require_team_admin,
-    require_team_member,
     require_team_admin_from_member,
-    require_team_member_from_member
+    require_team_member,
+    require_team_member_from_member,
 )
 from app.schemas.team_member import (
     TeamMemberCreate,
@@ -16,9 +16,9 @@ from app.schemas.team_member import (
 from app.services.team_member import (
     add_team_member_service,
     get_team_member_service,
+    list_team_members_service,
     remove_team_member_service,
     update_team_member_service,
-    list_team_members_service
 )
 
 router = APIRouter(prefix="", tags=["Team Members"])
@@ -29,7 +29,7 @@ async def add_member(
     payload: TeamMemberCreate,
     team_id:int,
     db: AsyncSession = Depends(get_db),
-    _: None = Depends(require_team_admin),  # only admin/owner can invite
+    _: None = Depends(require_team_admin),
 ):
     return await add_team_member_service(
         db=db,
