@@ -1,16 +1,15 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import AsyncSessionLocal
 from app.core.config import get_settings
+from app.core.database import AsyncSessionLocal
 from app.core.security import oauth2_scheme
-from app.models.user import User
-from app.repositories.user import get_user_by_id
-from app.services.team_member import get_user_team_membership_service
-from app.repositories.team_member import get_team_id_from_member_id
 from app.models.team_member import TeamMember
-
+from app.models.user import User
+from app.repositories.team_member import get_team_id_from_member_id, get_team_member
+from app.repositories.user import get_user_by_id
+from app.repositories.task import get_team_id_from_task
 
 settings = get_settings()
 SECRET_KEY = settings.SECRET_KEY
@@ -103,7 +102,7 @@ async def get_team_membership(
     user: User = Depends(get_current_active_user),
 ) -> TeamMember | None:
 
-    membership = await get_user_team_membership_service(
+    membership = await get_team_member(
         db=db,
         user_id=user.id,  # ty:ignore[invalid-argument-type]
         team_id=team_id,
@@ -126,6 +125,25 @@ async def get_team_membership_from_member(
     
     # get team_id from member_id
     team_id = await get_team_id_from_member_id(db, member_id)
+
+    if not team_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Team member not found",
+        )
+
+    # reuse main resolver
+    return await get_team_membership(team_id, db, user)
+
+
+async def get_team_membership_from_task(
+    task_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+) -> TeamMember | None:
+    
+    # get team_id from member_id
+    team_id = await get_team_id_from_task(db, task_id)
 
     if not team_id:
         raise HTTPException(
@@ -184,6 +202,28 @@ async def require_team_member_from_member(
 
 async def require_team_admin_from_member(
     membership: TeamMember = Depends(get_team_membership_from_member),
+    user: User = Depends(get_current_active_user),
+):
+    if membership.role not in ADMIN_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+
+    return membership
+
+# ---------------------------
+# ROLE CHECKS (TASK_ID)
+# ---------------------------
+
+async def require_team_member_from_task(
+    membership: TeamMember = Depends(get_team_membership_from_task),
+):
+    return membership
+
+
+async def require_team_admin_from_task(
+    membership: TeamMember = Depends(get_team_membership_from_task),
     user: User = Depends(get_current_active_user),
 ):
     if membership.role not in ADMIN_ROLES:
