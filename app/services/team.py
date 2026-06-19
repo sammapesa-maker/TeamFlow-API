@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 from app.models.user import User
+from app.models.team import Team
 from app.repositories.team import (
     get_team_by_id,
     get_team_by_name,
@@ -53,7 +54,7 @@ async def update_team_service(
     name: str | None = None,
     description: str | None = None,
 ):
-    team = await get_team_by_id(db, team_id)
+    team: Team = await get_team_by_id(db, team_id)
 
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")

@@ -80,10 +80,10 @@ async def update_team(
 # -----------------------
 # DELETE TEAM
 # -----------------------
-@router.delete("/{team_id}", status_code=status.HTTP_200_OK)
+@router.delete("/{team_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_team(
     team_id: int,
     db: AsyncSession = Depends(get_db),
     _ = Depends(require_team_owner),
 ):
-    return await delete_team_service(db, team_id)
+    await delete_team_service(db, team_id)

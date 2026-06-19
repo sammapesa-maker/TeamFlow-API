@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 async def get_refresh_token_by_jti(jti: str, db: AsyncSession):
     results = await db.execute(select(RefreshToken).where(RefreshToken.id == jti))
-    return results
+    return results.scalar_one_or_none()
 
 
 async def revoke_refresh_token(jti: str, db: AsyncSession):

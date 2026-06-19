@@ -17,12 +17,12 @@ async def create_team(
 
 async def get_team_by_id(db: AsyncSession, team_id: int):
     results = await db.execute(select(Team).where(Team.id == team_id))
-    return results
+    return results.scalar_one_or_none()
 
 
 async def get_team_by_name(db: AsyncSession, name: str):
     results = await db.execute(select(Team).where(Team.name == name))
-    return results
+    return results.scalar_one_or_none()
 
 async def get_user_teams(db: AsyncSession, user_id: int):
     results = await db.execute(
@@ -35,7 +35,7 @@ async def get_user_teams(db: AsyncSession, user_id: int):
 
 async def list_teams(db: AsyncSession, skip: int = 0, limit: int = 100):
     results = await db.execute(select(Team).offset(skip).limit(limit))
-    return results
+    return results.scalar_one_or_none()
 
 
 async def update_team(
@@ -44,14 +44,14 @@ async def update_team(
     name: Optional[str] = None,
     description: Optional[str] = None,
 ):
-    team = await db.execute(select(Team).where(Team.id == team_id))
+    team = await get_team_by_id(db, team_id)
     if not team:
         return None
 
     if name is not None:
-        team.name = name  # ty:ignore[invalid-assignment]
+        team.name = name
     if description is not None:
-        team.description = description  # ty:ignore[invalid-assignment]
+        team.description = description
 
     await db.commit()
     await db.refresh(team)
@@ -59,7 +59,7 @@ async def update_team(
 
 
 async def delete_team(db: AsyncSession, team_id: int) -> bool:
-    team = await db.execute(select(Team).where(Team.id == team_id))
+    team = await get_team_by_id(db, team_id)
     if not team:
         return False
 
