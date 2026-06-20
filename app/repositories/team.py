@@ -33,7 +33,7 @@ async def get_user_teams(db: AsyncSession, user_id: int):
     return results.scalars().all()
 
 
-async def list_teams(db: AsyncSession):
+async def get_all_teams(db: AsyncSession):
     results = await db.execute(select(Team))
     return results.scalar_one_or_none()
 

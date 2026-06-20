@@ -56,6 +56,10 @@ async def list_team_members(db: AsyncSession, team_id: int):
     return results.scalars().all()
 
 
+async def list_all_memberships(db):
+    results = await db.execute(select(TeamMember))
+    return results.scalars().all()
+
 
 async def update_team_member(
     db: AsyncSession,

@@ -38,6 +38,10 @@ async def list_tasks(db: AsyncSession, team_id: int):
     results = await db.execute(select(Task).where(Task.team_id == team_id))
     return results.scalars().all()
 
+async def list_all_tasks(db: AsyncSession):
+    results = await db.execute(select(Task))
+    return results.scalars().all()
+
 
 async def get_team_id_from_task(db: AsyncSession, task_id: int):
     result = await db.execute(select(Task.team_id).where((Task.id == task_id)))

@@ -8,7 +8,8 @@ from app.repositories.team import (
     create_team,
     update_team,
     delete_team,
-    get_user_teams
+    get_user_teams,
+    get_all_teams
 )
 from app.repositories.team_member import create_team_member
 
@@ -78,3 +79,6 @@ async def delete_team_service(db: AsyncSession, team_id: int):
         raise HTTPException(status_code=404, detail="Team not found")
 
     return await delete_team(db, team_id)
+
+async def get_all_teams_service(db:AsyncSession):
+    return await get_all_teams(db)

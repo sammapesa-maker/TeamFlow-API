@@ -1,10 +1,11 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.team_member import (
     create_team_member,
-    get_team_member_by_id,
     get_team_member,
+    get_team_member_by_id,
+    list_all_memberships,
     list_team_members,
     update_team_member,
 )
@@ -61,6 +62,9 @@ async def get_user_team_membership_service(
 async def list_team_members_service(db: AsyncSession, team_id: int):
     return await list_team_members(db, team_id)
 
+
+async def get_all_memberships(db:AsyncSession):
+    return await list_all_memberships(db)
 
 
 # -----------------------
