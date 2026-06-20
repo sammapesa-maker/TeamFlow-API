@@ -1,34 +1,37 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timedelta, timezone
+
 from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from jose import JWTError, jwt
 from pydantic import SecretStr
-from app.schemas.auth_schemas import UserRegister, UserLogin
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import Settings, get_settings
 from app.core.security import (
-    hash_password,
-    verify_password,
     create_access_token,
     create_refresh_token,
+    hash_password,
+    verify_password,
+    verify_token,
 )
-from datetime import datetime, timedelta, timezone
+from app.models.user import User
+from app.repositories.token import (
+    create_refresh_token_entry,
+    get_refresh_token_by_jti,
+    revoke_refresh_token,
+)
 from app.repositories.user import (
     create_user,
+    delete_user,
+    get_all_users,
     get_user_by_email,
     get_user_by_id,
     get_user_by_username,
     update_user,
     update_user_password,
-    delete_user,
-)
-from app.core.config import get_settings, Settings
-from jose import JWTError, jwt
-from app.core.security import verify_token
-from app.repositories.token import (
-    get_refresh_token_by_jti,
-    revoke_refresh_token,
-    create_refresh_token_entry,
 )
 from app.schemas import auth_schemas
-from app.models.user import User
+from app.schemas.auth_schemas import UserLogin, UserRegister
 
 settings: Settings = get_settings()
 SECRET_KEY: str = settings.SECRET_KEY
@@ -202,3 +205,7 @@ async def change_password(
 async def delete_user_service(user: User, db: AsyncSession):
     user_id: int = user.id  # ty:ignore[invalid-assignment]
     await delete_user(user_id=user_id, db=db)
+
+
+async def get_all_users_service(db: AsyncSession):
+    return await get_all_users(db)

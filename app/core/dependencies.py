@@ -233,3 +233,18 @@ async def require_team_admin_from_task(
         )
 
     return membership
+
+# ----------------------
+# SUPER USER DEPENDENCIES
+# ----------------------
+
+async def require_superuser(
+    user: User = Depends(get_current_active_user)
+):
+    if not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Superuser access required"
+        )
+    
+    return user
