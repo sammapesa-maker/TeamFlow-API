@@ -78,7 +78,7 @@ async def delete_team_service(db: AsyncSession, team_id: int):
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
 
-    return await delete_team(db, team_id)
+    await delete_team(db, team_id)
 
 async def get_all_teams_service(db:AsyncSession):
     return await get_all_teams(db)

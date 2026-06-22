@@ -58,11 +58,10 @@ async def update_team(
     return team
 
 
-async def delete_team(db: AsyncSession, team_id: int) -> bool:
+async def delete_team(db: AsyncSession, team_id: int):
     team = await get_team_by_id(db, team_id)
     if not team:
         return False
 
     await db.delete(team)
     await db.commit()
-    return True
