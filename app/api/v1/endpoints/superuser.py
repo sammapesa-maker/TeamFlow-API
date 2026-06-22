@@ -1,24 +1,43 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from typing import Annotated
 from app.core.dependencies import get_db, require_superuser
-from app.schemas.auth_schemas import UserResponse
+from app.schemas.auth_schemas import UserQueryParams, UserResponse, PaginatedUserResponse, UserSortField
+from app.schemas.task import TaskRead
 from app.schemas.team import TeamRead
 from app.schemas.team_member import TeamMemberRead
-from app.schemas.task import TaskRead
-from app.services.auth_service import get_all_users_service, get_user_profile
+from app.services.auth_service import get_user_profile, get_users_service
+from app.services.task import get_task_by_id, list_all_tasks_service
 from app.services.team import get_all_teams_service, get_team_service
 from app.services.team_member import get_all_memberships, get_team_member_by_id
-from app.services.task import list_all_tasks_service, get_task_by_id
 
 router = APIRouter(prefix="/admin", tags=["SuperUser"])
 
-@router.get(path="/users", response_model=list[UserResponse], status_code=status.HTTP_200_OK)
+def get_user_query_params(
+    username_contains: Annotated[str | None, Query(description="Partial username match")] = None,
+    is_active: Annotated[bool | None, Query(description="State of the user")] = None,
+    is_superuser: Annotated[bool | None, Query(description="Superuser privilege")] = None,
+    sort_by: Annotated[UserSortField, Query()] = UserSortField.id,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0
+) -> UserQueryParams:
+    return UserQueryParams(
+        username_contains=username_contains,
+        is_active=is_active,
+        is_superuser=is_superuser,
+        sort_by=sort_by,
+        limit=limit,
+        offset=offset
+    )
+
+
+@router.get(path="/users", response_model=PaginatedUserResponse, status_code=status.HTTP_200_OK)
 async def get_all_users(
+    query: Annotated[UserQueryParams, Depends(get_user_query_params)],
     db: AsyncSession = Depends(get_db),
     _= Depends(require_superuser)
 ):
-    return await get_all_users_service(db)
+    return await get_users_service(db, query)
 
 @router.get(path="/users/{user_id}", response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def get_user(

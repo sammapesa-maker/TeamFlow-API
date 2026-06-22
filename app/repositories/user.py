@@ -1,9 +1,52 @@
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, Select, desc, asc, func
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.schemas.auth_schemas import UserQueryParams
 from app.models.user import User
+
+# Helper Functions
+def _apply_filters(stmt: Select, query: UserQueryParams) -> Select:
+    if query.username_contains is not None:
+        stmt = stmt.where(
+            User.username.ilike(f"%{query.username_contains}%")
+        )
+    
+    if query.is_active is not None:
+        stmt = stmt.where(
+            User.is_active == query.is_active
+        )
+    
+    if query.is_superuser is not None:
+        stmt = stmt.where(
+            User.is_superuser == query.is_superuser
+        )
+    
+    return stmt
+
+def _apply_sorting(stmt: Select, query: UserQueryParams) -> Select:
+    sort_column_value = query.sort_by.value
+    
+    # Determine if the sorting direction is descending
+    if sort_column_value[0] == '-':
+        sort_column_name:str = sort_column_value[1:]
+        stmt = stmt.order_by(desc(getattr(User, sort_column_name)))
+    else:
+        stmt = stmt.order_by(asc(getattr(User, sort_column_value)))
+    
+    return stmt
+
+
+def _apply_pagination(stmt: Select, query: UserQueryParams) -> Select:
+    return stmt.offset(query.offset).limit(query.limit)
+
+async def _get_total_count(db: AsyncSession, query: UserQueryParams) -> int:
+    count_stmt = select(func.count()).select_from(User)
+    count_stmt = _apply_filters(count_stmt, query)
+
+    result = await db.execute(count_stmt)
+    return result.scalar_one()
+
 
 
 async def create_user(
@@ -77,11 +120,17 @@ async def delete_user(user_id: int, db: AsyncSession) -> None:
     await db.commit()
 
 
-async def get_all_users(
-    db: AsyncSession
+async def get_users(
+    db: AsyncSession, query: UserQueryParams
 ):
-    results = await db.execute(select(User))
-    return results.scalars().all()
+    stmt = select(User)
+    stmt = _apply_filters(stmt, query)
+    stmt = _apply_sorting(stmt, query)
+    stmt = _apply_pagination(stmt, query)
+    
+    total = await _get_total_count(db, query)
+    results = await db.execute(stmt)
+    return total, results.scalars().all()
 
 
 async def update_user_password(

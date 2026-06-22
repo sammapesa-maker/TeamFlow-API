@@ -23,15 +23,21 @@ from app.repositories.token import (
 from app.repositories.user import (
     create_user,
     delete_user,
-    get_all_users,
+    get_users,
     get_user_by_email,
     get_user_by_id,
     get_user_by_username,
     update_user,
     update_user_password,
 )
-from app.schemas import auth_schemas
-from app.schemas.auth_schemas import UserLogin, UserRegister
+from app.schemas.auth_schemas import (
+    ChangePassword,
+    UserLogin,
+    UserQueryParams,
+    UserRegister,
+    UserUpdate,
+    PaginatedUserResponse
+)
 
 settings: Settings = get_settings()
 SECRET_KEY: str = settings.SECRET_KEY
@@ -161,7 +167,7 @@ async def get_user_profile(db: AsyncSession, user_id: int):
     return user
 
 
-async def update_profile(data: auth_schemas.UserUpdate, user: User, db: AsyncSession):
+async def update_profile(data: UserUpdate, user: User, db: AsyncSession):
     username: str | None = data.username
     email: str | None = data.email
 
@@ -181,7 +187,7 @@ async def update_profile(data: auth_schemas.UserUpdate, user: User, db: AsyncSes
 
 
 async def change_password(
-    data: auth_schemas.ChangePassword, db: AsyncSession, user_id: int
+    data: ChangePassword, db: AsyncSession, user_id: int
 ):
     old_password = data.current_password.get_secret_value()
     new_password = data.new_password.get_secret_value()
@@ -207,5 +213,12 @@ async def delete_user_service(user: User, db: AsyncSession):
     await delete_user(user_id=user_id, db=db)
 
 
-async def get_all_users_service(db: AsyncSession):
-    return await get_all_users(db)
+async def get_users_service(db: AsyncSession, query: UserQueryParams) -> PaginatedUserResponse:
+    total, results = await get_users(db, query)
+    
+    return PaginatedUserResponse(
+        total=total,
+        limit=query.limit,
+        offset=query.offset,
+        items=results
+    )
