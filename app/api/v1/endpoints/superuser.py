@@ -30,11 +30,12 @@ from app.schemas.team_member import (
     TeamMemberRoleEnum,
     TeamMemberSortField,
     TeamMemberStatusEnum,
+    TeamMemberRead
 )
 from app.services.auth_service import get_user_profile, get_users_service
 from app.services.task import get_task_by_id, list_tasks_service
 from app.services.team import get_team_service, get_teams_service
-from app.services.team_member import get_team_member_by_id, get_team_members_service
+from app.services.team_member import get_team_member_service, get_team_members_service
 
 router = APIRouter(prefix="/admin", tags=["SuperUser"])
 
@@ -158,13 +159,13 @@ async def get_all_members(
 ):
     return await get_team_members_service(db, query)
 
-@router.get(path="/members/{member_id}", response_model=UserResponse, status_code=status.HTTP_200_OK)
+@router.get(path="/members/{member_id}", response_model=TeamMemberRead, status_code=status.HTTP_200_OK)
 async def get_member(
     member_id: int,
     db: AsyncSession = Depends(get_db),
     _= Depends(require_superuser)
 ):
-    return await get_team_member_by_id(db,member_id)
+    return await get_team_member_service(db,member_id)
 
 
 @router.get(path="/tasks", response_model=PaginatedTaskResponse, status_code=status.HTTP_200_OK)
