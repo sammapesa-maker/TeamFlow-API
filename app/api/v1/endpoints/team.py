@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from typing import Annotated
 from app.core.dependencies import (
     get_current_active_user,
     get_db,
@@ -13,16 +13,33 @@ from app.schemas.team import (
     TeamCreate,
     TeamRead,
     TeamUpdate,
+    TeamQueryParams,
+    TeamSortField,
+    PaginatedTeamResponse
 )
 from app.services.team import (
     create_team_service,
     delete_team_service,
     get_team_service,
-    list_teams_service,
+    get_teams_service,
     update_team_service,
 )
 
-router = APIRouter(prefix="/teams", tags=["Teams"])
+router = APIRouter(prefix="/my-teams", tags=["Teams"])
+
+def get_team_query_params(
+    name_contains: Annotated[str | None, Query(description="Partial name match")] = None,
+    sort_by: Annotated[TeamSortField, Query()] = TeamSortField.id,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0
+) -> TeamQueryParams:
+    return TeamQueryParams(
+        name_contains=name_contains,
+        sort_by=sort_by,
+        limit=limit,
+        offset=offset
+    )
+    
 
 
 @router.post("/", response_model=TeamRead, status_code=status.HTTP_201_CREATED)
@@ -48,13 +65,14 @@ async def get_team(
     return await get_team_service(db=db, team_id=team_id)
 
 
-@router.get("/", response_model=list[TeamRead], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=PaginatedTeamResponse, status_code=status.HTTP_200_OK)
 async def list_teams(
+    query: TeamQueryParams = Depends(get_team_query_params),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_active_user)
 ):
-    # add filtering, sorting, searching and pagination
-    return await list_teams_service(user, db)
+    query.owner_id = user.id  # ty:ignore[invalid-assignment]
+    return await get_teams_service(db, query)
 
 
 # -----------------------

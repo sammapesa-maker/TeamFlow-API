@@ -9,9 +9,10 @@ from app.repositories.team import (
     update_team,
     delete_team,
     get_user_teams,
-    get_all_teams
+    get_teams
 )
 from app.repositories.team_member import create_team_member
+from app.schemas.team import TeamQueryParams, PaginatedTeamResponse
 
 
 async def create_team_service(
@@ -42,13 +43,6 @@ async def get_team_service(db: AsyncSession, team_id: int):
     return team
 
 
-async def list_teams_service(
-    user: User, db: AsyncSession
-):
-    return await get_user_teams(db, user.id)  # ty:ignore[invalid-argument-type]
-
-
-
 async def update_team_service(
     db: AsyncSession,
     team_id: int,
@@ -71,7 +65,6 @@ async def update_team_service(
     return updated
 
 
-
 async def delete_team_service(db: AsyncSession, team_id: int):
     team = await get_team_by_id(db, team_id)
 
@@ -80,5 +73,19 @@ async def delete_team_service(db: AsyncSession, team_id: int):
 
     await delete_team(db, team_id)
 
-async def get_all_teams_service(db:AsyncSession):
-    return await get_all_teams(db)
+async def get_teams_service(db:AsyncSession, query: TeamQueryParams) -> PaginatedTeamResponse:
+    total, results = await get_teams(db, query)
+    
+    return PaginatedTeamResponse(
+        total=total,
+        limit=query.limit,
+        offset=query.offset,
+        items=results
+    )
+
+
+async def list_teams_service(
+    user: User, db: AsyncSession
+):
+    return await get_user_teams(db, user.id)  # ty:ignore[invalid-argument-type]
+

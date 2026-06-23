@@ -4,11 +4,11 @@ from typing import Annotated
 from app.core.dependencies import get_db, require_superuser
 from app.schemas.auth_schemas import UserQueryParams, UserResponse, PaginatedUserResponse, UserSortField
 from app.schemas.task import TaskRead
-from app.schemas.team import TeamRead
+from app.schemas.team import TeamRead, TeamSortField, TeamQueryParams, PaginatedTeamResponse
 from app.schemas.team_member import TeamMemberRead
 from app.services.auth_service import get_user_profile, get_users_service
 from app.services.task import get_task_by_id, list_all_tasks_service
-from app.services.team import get_all_teams_service, get_team_service
+from app.services.team import get_teams_service, get_team_service
 from app.services.team_member import get_all_memberships, get_team_member_by_id
 
 router = APIRouter(prefix="/admin", tags=["SuperUser"])
@@ -31,6 +31,23 @@ def get_user_query_params(
     )
 
 
+def get_team_query_params(
+    name_contains: Annotated[str | None, Query(description="Partial name match")] = None,
+    owner_id: Annotated[int | None, Query(description="Team's Owner id")] = None,
+    sort_by: Annotated[TeamSortField, Query()] = TeamSortField.id,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0
+) -> TeamQueryParams:
+    return TeamQueryParams(
+        name_contains=name_contains,
+        owner_id=owner_id,
+        sort_by=sort_by,
+        limit=limit,
+        offset=offset
+    )
+    
+
+
 @router.get(path="/users", response_model=PaginatedUserResponse, status_code=status.HTTP_200_OK)
 async def get_all_users(
     query: Annotated[UserQueryParams, Depends(get_user_query_params)],
@@ -48,12 +65,13 @@ async def get_user(
     return await get_user_profile(db,user_id)
 
 
-@router.get(path="/teams", response_model=list[TeamRead], status_code=status.HTTP_200_OK)
+@router.get(path="/teams", response_model=PaginatedTeamResponse, status_code=status.HTTP_200_OK)
 async def get_all_teams(
+    query: TeamQueryParams = Depends(get_team_query_params),
     db: AsyncSession = Depends(get_db),
     _= Depends(require_superuser)
 ):
-    return await get_all_teams_service(db)
+    return await get_teams_service(db, query)
 
 @router.get(path="/teams/{team_id}", response_model=TeamRead, status_code=status.HTTP_200_OK)
 async def get_team(

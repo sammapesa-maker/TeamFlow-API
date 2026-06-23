@@ -6,6 +6,7 @@ from enum import Enum
 # AUTH SCHEMAS
 # -------------------------
 
+
 class UserRegister(BaseModel):
     username: str
     email: EmailStr
@@ -30,6 +31,7 @@ class RefreshTokenIn(BaseModel):
 # USER SCHEMAS
 # -------------------------
 
+
 class UserResponse(BaseModel):
     id: int
     username: str
@@ -45,60 +47,53 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[EmailStr] = None
 
+
 class ChangePassword(BaseModel):
     current_password: SecretStr
     new_password: SecretStr
 
+
 class UserSortField(str, Enum):
     id = "id"
     username = "username"
-    created_at = "created-at"
-    updated_at = "updated-at"
+    created_at = "created_at"
+    updated_at = "updated_at"
     id_desc = "-id"
     username_desc = "-username"
-    created_at_desc = "-created-at"
-    updated_at_desc = "-updated-at"
+    created_at_desc = "-created_at"
+    updated_at_desc = "-updated_at"
+
 
 class UserQueryParams(BaseModel):
     # Filtering fields
     username_contains: Optional[str] = Field(
         default=None,
         description="Case insensitive partial match on the username",
-        max_length=255
+        max_length=255,
     )
     is_active: Optional[bool] = Field(
-        default=None,
-        description="Active or inactive filter"
+        default=None, description="Active or inactive filter"
     )
-    is_superuser: Optional[bool] = Field(
-        default=None,
-        description="Super User filter"
-    )
-    
+    is_superuser: Optional[bool] = Field(default=None, description="Super User filter")
+
     # Sorting fields
     sort_by: UserSortField = Field(
-        default=UserSortField.id,
-        description="Fields to sort by"
+        default=UserSortField.id, description="Fields to sort by"
     )
-    
+
     # --- Pagination fields ---
     limit: int = Field(
-        default=20,
-        ge=1,
-        le=100,
-        description="Number of records to return"
+        default=20, ge=1, le=100, description="Number of records to return"
     )
-    offset: int = Field(
-        default=0,
-        ge=0,
-        description="Number of records to skip"
-    )
+    offset: int = Field(default=0, ge=0, description="Number of records to skip")
+
 
 class PaginatedUserResponse(BaseModel):
     """
     Always return metadata alongside results.
     Clients need to know total count for pagination UI.
     """
+
     total: int
     limit: int
     offset: int
