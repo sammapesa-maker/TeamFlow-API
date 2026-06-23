@@ -1,15 +1,34 @@
-from fastapi import APIRouter, Depends, status, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.dependencies import get_db, require_superuser
-from app.schemas.auth_schemas import UserQueryParams, UserResponse, PaginatedUserResponse, UserSortField
+from app.schemas.auth_schemas import (
+    PaginatedUserResponse,
+    UserQueryParams,
+    UserResponse,
+    UserSortField,
+)
 from app.schemas.task import TaskRead
-from app.schemas.team import TeamRead, TeamSortField, TeamQueryParams, PaginatedTeamResponse
-from app.schemas.team_member import TeamMemberRead
+from app.schemas.team import (
+    PaginatedTeamResponse,
+    TeamQueryParams,
+    TeamRead,
+    TeamSortField,
+)
+from app.schemas.team_member import (
+    PaginatedTeamMemberResponse,
+    TeamMemberQueryParams,
+    TeamMemberRoleEnum,
+    TeamMemberStatusEnum,
+    TeamMemberSortField,
+    PaginatedTeamMemberResponse
+)
 from app.services.auth_service import get_user_profile, get_users_service
 from app.services.task import get_task_by_id, list_all_tasks_service
-from app.services.team import get_teams_service, get_team_service
-from app.services.team_member import get_all_memberships, get_team_member_by_id
+from app.services.team import get_team_service, get_teams_service
+from app.services.team_member import get_team_member_by_id, get_team_members_service
 
 router = APIRouter(prefix="/admin", tags=["SuperUser"])
 
@@ -45,7 +64,27 @@ def get_team_query_params(
         limit=limit,
         offset=offset
     )
-    
+
+
+def get_member_query_params(
+    user_id: Annotated[int | None, Query(ge=1)] = None,
+    team_id: Annotated[int | None, Query(ge=1)] = None,
+    role: Annotated[TeamMemberRoleEnum | None, Query()] = None,
+    status: Annotated[TeamMemberStatusEnum | None, Query()] = None,
+    sort_by: Annotated[TeamMemberSortField, Query()] = TeamMemberSortField.id,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0
+):
+    return TeamMemberQueryParams(
+        user_id=user_id,
+        team_id=team_id,
+        role=role,
+        status=status,
+        sort_by=sort_by,
+        limit=limit,
+        offset=offset
+    )
+
 
 
 @router.get(path="/users", response_model=PaginatedUserResponse, status_code=status.HTTP_200_OK)
@@ -82,12 +121,13 @@ async def get_team(
     return await get_team_service(db,team_id)
 
 
-@router.get(path="/members", response_model=list[TeamMemberRead], status_code=status.HTTP_200_OK)
+@router.get(path="/members", response_model=PaginatedTeamMemberResponse, status_code=status.HTTP_200_OK)
 async def get_all_members(
+    query: TeamMemberQueryParams = Depends(get_member_query_params),
     db: AsyncSession = Depends(get_db),
     _= Depends(require_superuser)
 ):
-    return await get_all_memberships(db)
+    return await get_team_members_service(db, query)
 
 @router.get(path="/members/{member_id}", response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def get_member(

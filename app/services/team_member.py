@@ -4,11 +4,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.team_member import (
     create_team_member,
     get_team_member,
+    get_team_members,
     get_team_member_by_id,
-    list_all_memberships,
-    list_team_members,
     update_team_member,
 )
+from app.schemas.team_member import TeamMemberQueryParams, PaginatedTeamMemberResponse
 
 
 async def add_team_member_service(
@@ -59,13 +59,16 @@ async def get_user_team_membership_service(
     return member
 
 
-async def list_team_members_service(db: AsyncSession, team_id: int):
-    return await list_team_members(db, team_id)
-
-
-async def get_all_memberships(db:AsyncSession):
-    return await list_all_memberships(db)
-
+async def get_team_members_service(db: AsyncSession, query: TeamMemberQueryParams) -> PaginatedTeamMemberResponse:
+    total, results = await get_team_members(db, query)
+    
+    return PaginatedTeamMemberResponse(
+        total=total,
+        limit=query.limit,
+        offset=query.offset,
+        items=results
+    )
+    
 
 # -----------------------
 # UPDATE

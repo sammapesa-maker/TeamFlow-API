@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, status
+from typing import Annotated
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import (
@@ -12,16 +13,38 @@ from app.schemas.team_member import (
     TeamMemberCreate,
     TeamMemberRead,
     TeamMemberUpdate,
+    TeamMemberQueryParams,
+    TeamMemberRoleEnum,
+    TeamMemberStatusEnum,
+    PaginatedTeamMemberResponse,
+    TeamMemberSortField
 )
 from app.services.team_member import (
     add_team_member_service,
     get_team_member_service,
-    list_team_members_service,
+    get_team_members_service,
     remove_team_member_service,
     update_team_member_service,
 )
 
 router = APIRouter(prefix="", tags=["Team Members"])
+
+def get_member_query_params(
+    user_id: Annotated[int | None, Query(ge=1)] = None,
+    role: Annotated[TeamMemberRoleEnum | None, Query()] = None,
+    status: Annotated[TeamMemberStatusEnum | None, Query()] = None,
+    sort_by: Annotated[TeamMemberSortField, Query()] = TeamMemberSortField.id,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0
+):
+    return TeamMemberQueryParams(
+        user_id=user_id,
+        role=role,
+        status=status,
+        sort_by=sort_by,
+        limit=limit,
+        offset=offset
+    )
 
 
 @router.post("/teams/{team_id}/members", response_model=TeamMemberRead, status_code=status.HTTP_201_CREATED)
@@ -39,14 +62,15 @@ async def add_member(
     )
 
 
-@router.get("/teams/{team_id}/members", response_model=list[TeamMemberRead], status_code=status.HTTP_200_OK)
+@router.get("/teams/{team_id}/members", response_model=PaginatedTeamMemberResponse, status_code=status.HTTP_200_OK)
 async def get_members(
     team_id: int,
+    query: TeamMemberQueryParams = Depends(get_member_query_params),
     db: AsyncSession = Depends(get_db),
     _: None = Depends(require_team_member),
 ):
-    # to add search, filter, sort and paginate
-    return await list_team_members_service(db, team_id)
+    query.team_id = team_id
+    return await get_team_members_service(db, query)
 
 
 @router.get("/team-member/{member_id}", response_model=TeamMemberRead, status_code=status.HTTP_200_OK)

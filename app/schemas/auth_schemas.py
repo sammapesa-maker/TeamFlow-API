@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, SecretStr, Field
 from typing import Optional
 from enum import Enum
+from datetime import datetime
 
 # -------------------------
 # AUTH SCHEMAS
@@ -38,6 +39,8 @@ class UserResponse(BaseModel):
     email: EmailStr
     is_active: bool
     is_superuser: bool
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True
