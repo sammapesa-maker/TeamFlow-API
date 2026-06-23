@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from typing import Annotated
 from app.core.dependencies import (
     get_current_active_user,
     get_db,
@@ -11,9 +11,14 @@ from app.core.dependencies import (
 )
 from app.models.user import User
 from app.schemas.task import (
+    PaginatedTaskResponse,
     TaskCreate,
+    TaskQueryParams,
     TaskRead,
+    TaskSortField,
     TaskUpdate,
+    TaskStatusEnum,
+    TaskPriorityEnum
 )
 from app.services.task import (
     create_task_service,
@@ -24,6 +29,27 @@ from app.services.task import (
 )
 
 router = APIRouter(prefix="", tags=["Tasks"])
+
+def get_task_query_params(
+    title_contains: Annotated[str | None, Query()] = None,
+    status: Annotated[TaskStatusEnum | None, Query()] = None,
+    priority: Annotated[TaskPriorityEnum | None, Query()] = None,
+    creator_id: Annotated[int | None, Query(ge=1)] = None,
+    assigned_to_id: Annotated[int | None, Query()] = None,
+    sort_by: Annotated[TaskSortField, Query()] = TaskSortField.id,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0
+) -> TaskQueryParams:
+    return TaskQueryParams(
+        title_contains=title_contains,
+        status=status,
+        priority=priority,
+        creator_id=creator_id,
+        assigned_to_id=assigned_to_id,
+        sort_by=sort_by,
+        limit=limit,
+        offset=offset
+    )
 
 
 @router.post("/teams/{team_id}/tasks", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
@@ -53,15 +79,15 @@ async def get_task(
     return await get_task_service(db, task_id)
 
 
-@router.get("/teams/{team_id}/tasks", response_model=list[TaskRead], status_code=status.HTTP_200_OK)
+@router.get("/teams/{team_id}/tasks", response_model=PaginatedTaskResponse, status_code=status.HTTP_200_OK)
 async def list_tasks(
     team_id: int,
+    query: TaskQueryParams = Depends(get_task_query_params),
     db: AsyncSession = Depends(get_db),
     _=Depends(require_team_member)
 ):
-    # change inputs
-    # add filtering, searching, sorting and pagination
-    return await list_tasks_service(db, team_id)
+    query.team_id = team_id
+    return await list_tasks_service(db, query)
 
 
 @router.patch("/tasks/{task_id}", response_model=TaskRead, status_code=status.HTTP_200_OK)

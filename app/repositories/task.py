@@ -1,7 +1,54 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from app.models.task import Task
-from sqlalchemy import select
+from sqlalchemy import select, Select, desc, asc, func
+from app.schemas.task import TaskQueryParams
+
+
+# Helper Functions
+def _apply_filters(stmt: Select, query: TaskQueryParams) -> Select:
+    if query.title_contains is not None:
+        stmt = stmt.where(Task.name.ilike(f"%{query.title_contains}%"))
+
+    if query.creator_id is not None:
+        stmt = stmt.where(Task.owner_id == query.creator_id)
+    
+    if query.assigned_to_id is not None:
+        stmt = stmt.where(Task.owner_id == query.assigned_to_id)
+    
+    if query.team_id is not None:
+        stmt = stmt.where(Task.owner_id == query.team_id)
+    
+    if query.priority is not None:
+        stmt = stmt.where(Task.priority == query.priority)
+    
+    if query.status is not None:
+        stmt = stmt.where(Task.status == query.status)
+    
+    return stmt
+
+def _apply_sorting(stmt: Select, query: TaskQueryParams) -> Select:
+    sort_column_value = query.sort_by.value
+    
+    # Determine if the sorting direction is descending
+    if sort_column_value[0] == '-':
+        sort_column_name:str = sort_column_value[1:]
+        stmt = stmt.order_by(desc(getattr(Task, sort_column_name)))
+    else:
+        stmt = stmt.order_by(asc(getattr(Task, sort_column_value)))
+    
+    return stmt
+
+
+def _apply_pagination(stmt: Select, query: TaskQueryParams) -> Select:
+    return stmt.offset(query.offset).limit(query.limit)
+
+async def _get_total_count(db: AsyncSession, query: TaskQueryParams) -> int:
+    count_stmt = select(func.count()).select_from(Task)
+    count_stmt = _apply_filters(count_stmt, query)
+
+    result = await db.execute(count_stmt)
+    return result.scalar_one()
 
 
 async def create_task(
@@ -34,13 +81,15 @@ async def get_task_by_id(db: AsyncSession, task_id: int):
     return results.scalar_one_or_none()
 
 
-async def list_tasks(db: AsyncSession, team_id: int):
-    results = await db.execute(select(Task).where(Task.team_id == team_id))
-    return results.scalars().all()
-
-async def list_all_tasks(db: AsyncSession):
-    results = await db.execute(select(Task))
-    return results.scalars().all()
+async def list_tasks(db: AsyncSession, query: TaskQueryParams):
+    stmt = select(Task)
+    stmt = _apply_filters(stmt, query)
+    stmt = _apply_sorting(stmt, query)
+    stmt = _apply_pagination(stmt, query)
+    
+    total = await _get_total_count(db, query)
+    results = await db.execute(stmt)
+    return total, results.scalars().all()
 
 
 async def get_team_id_from_task(db: AsyncSession, task_id: int):
@@ -77,11 +126,10 @@ async def update_task(
     return task
 
 
-async def delete_task(db: AsyncSession, task_id: int) -> bool:
+async def delete_task(db: AsyncSession, task_id: int):
     task = await get_task_by_id(db, task_id)
     if not task:
         return False
 
     await db.delete(task)
     await db.commit()
-    return True

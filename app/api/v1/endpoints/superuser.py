@@ -10,7 +10,14 @@ from app.schemas.auth_schemas import (
     UserResponse,
     UserSortField,
 )
-from app.schemas.task import TaskRead
+from app.schemas.task import (
+    TaskPriorityEnum,
+    TaskQueryParams,
+    TaskRead,
+    TaskSortField,
+    TaskStatusEnum,
+    PaginatedTaskResponse
+)
 from app.schemas.team import (
     PaginatedTeamResponse,
     TeamQueryParams,
@@ -21,12 +28,11 @@ from app.schemas.team_member import (
     PaginatedTeamMemberResponse,
     TeamMemberQueryParams,
     TeamMemberRoleEnum,
-    TeamMemberStatusEnum,
     TeamMemberSortField,
-    PaginatedTeamMemberResponse
+    TeamMemberStatusEnum,
 )
 from app.services.auth_service import get_user_profile, get_users_service
-from app.services.task import get_task_by_id, list_all_tasks_service
+from app.services.task import get_task_by_id, list_tasks_service
 from app.services.team import get_team_service, get_teams_service
 from app.services.team_member import get_team_member_by_id, get_team_members_service
 
@@ -86,6 +92,29 @@ def get_member_query_params(
     )
 
 
+def get_task_query_params(
+    title_contains: Annotated[str | None, Query()] = None,
+    status: Annotated[TaskStatusEnum | None, Query()] = None,
+    priority: Annotated[TaskPriorityEnum | None, Query()] = None,
+    creator_id: Annotated[int | None, Query(ge=1)] = None,
+    assigned_to_id: Annotated[int | None, Query()] = None,
+    team_id: Annotated[int | None, Query(ge=1)] = None,
+    sort_by: Annotated[TaskSortField, Query()] = TaskSortField.id,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0
+) -> TaskQueryParams:
+    return TaskQueryParams(
+        title_contains=title_contains,
+        status=status,
+        priority=priority,
+        creator_id=creator_id,
+        assigned_to_id=assigned_to_id,
+        team_id=team_id,
+        sort_by=sort_by,
+        limit=limit,
+        offset=offset
+    )
+
 
 @router.get(path="/users", response_model=PaginatedUserResponse, status_code=status.HTTP_200_OK)
 async def get_all_users(
@@ -138,12 +167,13 @@ async def get_member(
     return await get_team_member_by_id(db,member_id)
 
 
-@router.get(path="/tasks", response_model=list[TaskRead], status_code=status.HTTP_200_OK)
+@router.get(path="/tasks", response_model=PaginatedTaskResponse, status_code=status.HTTP_200_OK)
 async def get_all_tasks(
+    query: TaskQueryParams = Depends(get_task_query_params),
     db: AsyncSession = Depends(get_db),
     _= Depends(require_superuser)
 ):
-    return await list_all_tasks_service(db)
+    return await list_tasks_service(db, query)
 
 @router.get(path="/tasks/{task_id}", response_model=TaskRead, status_code=status.HTTP_200_OK)
 async def get_task(
