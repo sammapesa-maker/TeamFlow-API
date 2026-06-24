@@ -23,20 +23,20 @@ from app.repositories.token import (
 from app.repositories.user import (
     create_user,
     delete_user,
-    get_users,
     get_user_by_email,
     get_user_by_id,
     get_user_by_username,
+    get_users,
     update_user,
     update_user_password,
 )
 from app.schemas.auth_schemas import (
     ChangePassword,
+    PaginatedUserResponse,
     UserLogin,
     UserQueryParams,
     UserRegister,
     UserUpdate,
-    PaginatedUserResponse
 )
 
 settings: Settings = get_settings()
@@ -186,9 +186,7 @@ async def update_profile(data: UserUpdate, user: User, db: AsyncSession):
     )
 
 
-async def change_password(
-    data: ChangePassword, db: AsyncSession, user_id: int
-):
+async def change_password(data: ChangePassword, db: AsyncSession, user_id: int):
     old_password = data.current_password.get_secret_value()
     new_password = data.new_password.get_secret_value()
 
@@ -213,12 +211,11 @@ async def delete_user_service(user: User, db: AsyncSession):
     await delete_user(user_id=user_id, db=db)
 
 
-async def get_users_service(db: AsyncSession, query: UserQueryParams) -> PaginatedUserResponse:
+async def get_users_service(
+    db: AsyncSession, query: UserQueryParams
+) -> PaginatedUserResponse:
     total, results = await get_users(db, query)
-    
+
     return PaginatedUserResponse(
-        total=total,
-        limit=query.limit,
-        offset=query.offset,
-        items=results
+        total=total, limit=query.limit, offset=query.offset, items=results
     )

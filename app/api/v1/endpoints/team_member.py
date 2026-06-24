@@ -1,5 +1,6 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, status, Query
+
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import (
@@ -10,14 +11,14 @@ from app.core.dependencies import (
     require_team_member_from_member,
 )
 from app.schemas.team_member import (
-    TeamMemberCreate,
-    TeamMemberRead,
-    TeamMemberUpdate,
-    TeamMemberQueryParams,
-    TeamMemberRoleEnum,
-    TeamMemberStatusEnum,
     PaginatedTeamMemberResponse,
-    TeamMemberSortField
+    TeamMemberCreate,
+    TeamMemberQueryParams,
+    TeamMemberRead,
+    TeamMemberRoleEnum,
+    TeamMemberSortField,
+    TeamMemberStatusEnum,
+    TeamMemberUpdate,
 )
 from app.services.team_member import (
     add_team_member_service,
@@ -29,13 +30,14 @@ from app.services.team_member import (
 
 router = APIRouter(prefix="", tags=["Team Members"])
 
+
 def get_member_query_params(
     user_id: Annotated[int | None, Query(ge=1)] = None,
     role: Annotated[TeamMemberRoleEnum | None, Query()] = None,
     status: Annotated[TeamMemberStatusEnum | None, Query()] = None,
     sort_by: Annotated[TeamMemberSortField, Query()] = TeamMemberSortField.id,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0
+    offset: Annotated[int, Query(ge=0)] = 0,
 ):
     return TeamMemberQueryParams(
         user_id=user_id,
@@ -43,14 +45,18 @@ def get_member_query_params(
         status=status,
         sort_by=sort_by,
         limit=limit,
-        offset=offset
+        offset=offset,
     )
 
 
-@router.post("/teams/{team_id}/members", response_model=TeamMemberRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/teams/{team_id}/members",
+    response_model=TeamMemberRead,
+    status_code=status.HTTP_201_CREATED,
+)
 async def add_member(
     payload: TeamMemberCreate,
-    team_id:int,
+    team_id: int,
     db: AsyncSession = Depends(get_db),
     _: None = Depends(require_team_admin),
 ):
@@ -62,7 +68,11 @@ async def add_member(
     )
 
 
-@router.get("/teams/{team_id}/members", response_model=PaginatedTeamMemberResponse, status_code=status.HTTP_200_OK)
+@router.get(
+    "/teams/{team_id}/members",
+    response_model=PaginatedTeamMemberResponse,
+    status_code=status.HTTP_200_OK,
+)
 async def get_members(
     team_id: int,
     query: TeamMemberQueryParams = Depends(get_member_query_params),
@@ -73,7 +83,11 @@ async def get_members(
     return await get_team_members_service(db, query)
 
 
-@router.get("/team-member/{member_id}", response_model=TeamMemberRead, status_code=status.HTTP_200_OK)
+@router.get(
+    "/team-member/{member_id}",
+    response_model=TeamMemberRead,
+    status_code=status.HTTP_200_OK,
+)
 async def get_member(
     member_id: int,
     db: AsyncSession = Depends(get_db),
@@ -82,7 +96,11 @@ async def get_member(
     return await get_team_member_service(db, member_id)
 
 
-@router.patch("/team-member/{member_id}", response_model=TeamMemberRead, status_code=status.HTTP_200_OK)
+@router.patch(
+    "/team-member/{member_id}",
+    response_model=TeamMemberRead,
+    status_code=status.HTTP_200_OK,
+)
 async def update_member(
     member_id: int,
     payload: TeamMemberUpdate,

@@ -1,7 +1,8 @@
-from app.models.base import TimestampMixin
-from app.core.database import Base
-from sqlalchemy import Column, Integer, String, ForeignKey, Text
+from sqlalchemy import Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
+
+from app.core.database import Base
+from app.models.base import TimestampMixin
 
 
 class Task(Base, TimestampMixin):

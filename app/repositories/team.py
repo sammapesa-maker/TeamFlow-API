@@ -1,9 +1,11 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
-from app.schemas.team import TeamQueryParams
+
+from sqlalchemy import Select, asc, desc, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.team import Team
 from app.models.team_member import TeamMember
-from sqlalchemy import select, Select, desc, asc, func
+from app.schemas.team import TeamQueryParams
 
 
 # Helper Functions
@@ -13,24 +15,26 @@ def _apply_filters(stmt: Select, query: TeamQueryParams) -> Select:
 
     if query.owner_id is not None:
         stmt = stmt.where(Team.owner_id == query.owner_id)
-    
+
     return stmt
+
 
 def _apply_sorting(stmt: Select, query: TeamQueryParams) -> Select:
     sort_column_value = query.sort_by.value
-    
+
     # Determine if the sorting direction is descending
-    if sort_column_value[0] == '-':
-        sort_column_name:str = sort_column_value[1:]
+    if sort_column_value[0] == "-":
+        sort_column_name: str = sort_column_value[1:]
         stmt = stmt.order_by(desc(getattr(Team, sort_column_name)))
     else:
         stmt = stmt.order_by(asc(getattr(Team, sort_column_value)))
-    
+
     return stmt
 
 
 def _apply_pagination(stmt: Select, query: TeamQueryParams) -> Select:
     return stmt.offset(query.offset).limit(query.limit)
+
 
 async def _get_total_count(db: AsyncSession, query: TeamQueryParams) -> int:
     count_stmt = select(func.count()).select_from(Team)
@@ -38,7 +42,6 @@ async def _get_total_count(db: AsyncSession, query: TeamQueryParams) -> int:
 
     result = await db.execute(count_stmt)
     return result.scalar_one()
-
 
 
 async def create_team(
@@ -73,7 +76,7 @@ async def get_teams(db: AsyncSession, query: TeamQueryParams):
     stmt = _apply_filters(stmt, query)
     stmt = _apply_sorting(stmt, query)
     stmt = _apply_pagination(stmt, query)
-    
+
     total = await _get_total_count(db, query)
     results = await db.execute(stmt)
     return total, results.scalars().all()

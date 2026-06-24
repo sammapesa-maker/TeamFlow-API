@@ -1,21 +1,23 @@
-from fastapi import APIRouter, Depends, status, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.dependencies import (
     get_current_active_user,
     get_db,
     require_team_admin,
     require_team_member,
-    require_team_owner
+    require_team_owner,
 )
 from app.models.user import User
 from app.schemas.team import (
+    PaginatedTeamResponse,
     TeamCreate,
-    TeamRead,
-    TeamUpdate,
     TeamQueryParams,
+    TeamRead,
     TeamSortField,
-    PaginatedTeamResponse
+    TeamUpdate,
 )
 from app.services.team import (
     create_team_service,
@@ -27,19 +29,18 @@ from app.services.team import (
 
 router = APIRouter(prefix="/my-teams", tags=["Teams"])
 
+
 def get_team_query_params(
-    name_contains: Annotated[str | None, Query(description="Partial name match")] = None,
+    name_contains: Annotated[
+        str | None, Query(description="Partial name match")
+    ] = None,
     sort_by: Annotated[TeamSortField, Query()] = TeamSortField.id,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> TeamQueryParams:
     return TeamQueryParams(
-        name_contains=name_contains,
-        sort_by=sort_by,
-        limit=limit,
-        offset=offset
+        name_contains=name_contains, sort_by=sort_by, limit=limit, offset=offset
     )
-    
 
 
 @router.post("/", response_model=TeamRead, status_code=status.HTTP_201_CREATED)
@@ -60,7 +61,7 @@ async def create_team(
 async def get_team(
     team_id: int,
     db: AsyncSession = Depends(get_db),
-    _ = Depends(require_team_member),
+    _=Depends(require_team_member),
 ):
     return await get_team_service(db=db, team_id=team_id)
 
@@ -69,7 +70,7 @@ async def get_team(
 async def list_teams(
     query: TeamQueryParams = Depends(get_team_query_params),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_active_user)
+    user: User = Depends(get_current_active_user),
 ):
     query.owner_id = user.id  # ty:ignore[invalid-assignment]
     return await get_teams_service(db, query)
@@ -83,7 +84,7 @@ async def update_team(
     team_id: int,
     payload: TeamUpdate,
     db: AsyncSession = Depends(get_db),
-    _ = Depends(require_team_admin),
+    _=Depends(require_team_admin),
 ):
     return await update_team_service(
         db=db,
@@ -100,6 +101,6 @@ async def update_team(
 async def delete_team(
     team_id: int,
     db: AsyncSession = Depends(get_db),
-    _ = Depends(require_team_owner),
+    _=Depends(require_team_owner),
 ):
     await delete_team_service(db, team_id)

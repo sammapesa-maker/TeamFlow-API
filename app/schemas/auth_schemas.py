@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr, SecretStr, Field
-from typing import Optional
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Optional
+
+from pydantic import BaseModel, EmailStr, Field, SecretStr
 
 # -------------------------
 # AUTH SCHEMAS

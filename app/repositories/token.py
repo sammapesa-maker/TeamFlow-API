@@ -1,7 +1,8 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.token import RefreshToken
-from app.core.security import hash_token
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.security import hash_token
+from app.models.token import RefreshToken
 
 
 async def get_refresh_token_by_jti(jti: str, db: AsyncSession):

@@ -10,7 +10,7 @@ from app.repositories.task import (
     update_task,
 )
 from app.repositories.team import get_team_by_id
-from app.schemas.task import TaskQueryParams, PaginatedTaskResponse
+from app.schemas.task import PaginatedTaskResponse, TaskQueryParams
 
 
 async def create_task_service(
@@ -44,14 +44,13 @@ async def get_task_service(db: AsyncSession, task_id: int):
     return task
 
 
-async def list_tasks_service(db: AsyncSession, query: TaskQueryParams) -> PaginatedTaskResponse:
+async def list_tasks_service(
+    db: AsyncSession, query: TaskQueryParams
+) -> PaginatedTaskResponse:
     total, results = await list_tasks(db, query)
-    
+
     return PaginatedTaskResponse(
-        total=total,
-        limit=query.limit,
-        offset=query.offset,
-        items=results
+        total=total, limit=query.limit, offset=query.offset, items=results
     )
 
 

@@ -1,7 +1,9 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
+
+from sqlalchemy import Select, asc, desc, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.task import Task
-from sqlalchemy import select, Select, desc, asc, func
 from app.schemas.task import TaskQueryParams
 
 
@@ -12,36 +14,38 @@ def _apply_filters(stmt: Select, query: TaskQueryParams) -> Select:
 
     if query.creator_id is not None:
         stmt = stmt.where(Task.owner_id == query.creator_id)
-    
+
     if query.assigned_to_id is not None:
         stmt = stmt.where(Task.owner_id == query.assigned_to_id)
-    
+
     if query.team_id is not None:
         stmt = stmt.where(Task.owner_id == query.team_id)
-    
+
     if query.priority is not None:
         stmt = stmt.where(Task.priority == query.priority)
-    
+
     if query.status is not None:
         stmt = stmt.where(Task.status == query.status)
-    
+
     return stmt
+
 
 def _apply_sorting(stmt: Select, query: TaskQueryParams) -> Select:
     sort_column_value = query.sort_by.value
-    
+
     # Determine if the sorting direction is descending
-    if sort_column_value[0] == '-':
-        sort_column_name:str = sort_column_value[1:]
+    if sort_column_value[0] == "-":
+        sort_column_name: str = sort_column_value[1:]
         stmt = stmt.order_by(desc(getattr(Task, sort_column_name)))
     else:
         stmt = stmt.order_by(asc(getattr(Task, sort_column_value)))
-    
+
     return stmt
 
 
 def _apply_pagination(stmt: Select, query: TaskQueryParams) -> Select:
     return stmt.offset(query.offset).limit(query.limit)
+
 
 async def _get_total_count(db: AsyncSession, query: TaskQueryParams) -> int:
     count_stmt = select(func.count()).select_from(Task)
@@ -56,10 +60,10 @@ async def create_task(
     title: str,
     team_id: int,
     creator_id: int,
-    description: str | None = None,  
+    description: str | None = None,
     status: str = "todo",
     priority: str = "medium",
-    assigned_to_id: int | None = None,  
+    assigned_to_id: int | None = None,
 ) -> Task:
     task = Task(
         title=title,
@@ -86,7 +90,7 @@ async def list_tasks(db: AsyncSession, query: TaskQueryParams):
     stmt = _apply_filters(stmt, query)
     stmt = _apply_sorting(stmt, query)
     stmt = _apply_pagination(stmt, query)
-    
+
     total = await _get_total_count(db, query)
     results = await db.execute(stmt)
     return total, results.scalars().all()
@@ -111,15 +115,15 @@ async def update_task(
         return None
 
     if title is not None:
-        task.title = title 
+        task.title = title
     if description is not None:
-        task.description = description 
+        task.description = description
     if status is not None:
-        task.status = status 
+        task.status = status
     if priority is not None:
-        task.priority = priority 
+        task.priority = priority
     if assigned_to_id is not None:
-        task.assigned_to_id = assigned_to_id 
+        task.assigned_to_id = assigned_to_id
 
     await db.commit()
     await db.refresh(task)

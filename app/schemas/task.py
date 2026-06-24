@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import Optional, Literal
 from datetime import datetime
 from enum import Enum
+from typing import Literal, Optional
+
+from pydantic import BaseModel, Field
 
 
 class TaskBase(BaseModel):
@@ -40,10 +41,12 @@ class TaskStatusEnum(str, Enum):
     progress = "progress"
     done = "done"
 
+
 class TaskPriorityEnum(str, Enum):
     low = "low"
     medium = "medium"
     high = "high"
+
 
 class TaskSortField(str, Enum):
     id = "id"
@@ -59,13 +62,23 @@ class TaskSortField(str, Enum):
 class TaskQueryParams(BaseModel):
     # Filtering Fields
     title_contains: Optional[str] = Field(
-        default=None, description="Partial match on the title of the Task", max_length=30
+        default=None,
+        description="Partial match on the title of the Task",
+        max_length=30,
     )
-    creator_id: Optional[int] = Field(default=None, description="Task's creator id", ge=1)
+    creator_id: Optional[int] = Field(
+        default=None, description="Task's creator id", ge=1
+    )
     team_id: Optional[int] = Field(default=None, description="Task's team id", ge=1)
-    assigned_to_id: Optional[int] = Field(default=None, description="Task's assigned to id", ge=1)
-    status: Optional[TaskStatusEnum] = Field(default=None, description="Current status of the task")
-    priority: Optional[TaskPriorityEnum] = Field(default=None, description="Priority of the task")
+    assigned_to_id: Optional[int] = Field(
+        default=None, description="Task's assigned to id", ge=1
+    )
+    status: Optional[TaskStatusEnum] = Field(
+        default=None, description="Current status of the task"
+    )
+    priority: Optional[TaskPriorityEnum] = Field(
+        default=None, description="Priority of the task"
+    )
 
     # Sorting Fields
     sort_by: TaskSortField = Field(default=TaskSortField.id)

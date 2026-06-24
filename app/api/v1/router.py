@@ -1,11 +1,6 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import (
-    auth_routes,
-    team,
-    team_member,
-    task,
-    superuser
-)
+
+from app.api.v1.endpoints import auth_routes, superuser, task, team, team_member
 
 # This is the master router for ALL v1 endpoints
 v1_router = APIRouter()

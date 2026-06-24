@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, ForeignKey, UniqueConstraint, String
+from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
-from app.models.base import TimestampMixin
+
 from app.core.database import Base
+from app.models.base import TimestampMixin
+
 
 class TeamMember(Base, TimestampMixin):
     __tablename__ = "team_members"
@@ -9,8 +11,10 @@ class TeamMember(Base, TimestampMixin):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     team_id = Column(Integer, ForeignKey("teams.id"), nullable=False)
-    role = Column(String(10), default="member", nullable=False) # owner, admin, member
-    status = Column(String(10), default="invited", nullable=False) # invited, active, removed
+    role = Column(String(10), default="member", nullable=False)  # owner, admin, member
+    status = Column(
+        String(10), default="invited", nullable=False
+    )  # invited, active, removed
 
     __table_args__ = (UniqueConstraint("user_id", "team_id", name="uq_user_team"),)
 

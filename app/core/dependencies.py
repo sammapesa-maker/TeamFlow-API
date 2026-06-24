@@ -7,9 +7,9 @@ from app.core.database import AsyncSessionLocal
 from app.core.security import oauth2_scheme
 from app.models.team_member import TeamMember
 from app.models.user import User
+from app.repositories.task import get_team_id_from_task
 from app.repositories.team_member import get_team_id_from_member_id, get_team_member
 from app.repositories.user import get_user_by_id
-from app.repositories.task import get_team_id_from_task
 
 settings = get_settings()
 SECRET_KEY = settings.SECRET_KEY
@@ -80,7 +80,6 @@ async def get_current_active_user(
     return current_user
 
 
-
 # ---------------------------
 # TEAM ROLE CONSTANTS
 # ---------------------------
@@ -95,6 +94,7 @@ ADMIN_ROLES = {OWNER, ADMIN}
 # ---------------------------
 # CORE RESOLVERS
 # ---------------------------
+
 
 async def get_team_membership(
     team_id: int,
@@ -122,7 +122,7 @@ async def get_team_membership_from_member(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ) -> TeamMember | None:
-    
+
     # get team_id from member_id
     team_id = await get_team_id_from_member_id(db, member_id)
 
@@ -141,7 +141,7 @@ async def get_team_membership_from_task(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ) -> TeamMember | None:
-    
+
     # get team_id from member_id
     team_id = await get_team_id_from_task(db, task_id)
 
@@ -158,6 +158,7 @@ async def get_team_membership_from_task(
 # ---------------------------
 # ROLE CHECKS (TEAM_ID)
 # ---------------------------
+
 
 async def require_team_member(
     membership: TeamMember = Depends(get_team_membership),
@@ -190,9 +191,11 @@ async def require_team_owner(
 
     return membership
 
+
 # ---------------------------
 # ROLE CHECKS (MEMBER_ID)
 # ---------------------------
+
 
 async def require_team_member_from_member(
     membership: TeamMember = Depends(get_team_membership_from_member),
@@ -212,9 +215,11 @@ async def require_team_admin_from_member(
 
     return membership
 
+
 # ---------------------------
 # ROLE CHECKS (TASK_ID)
 # ---------------------------
+
 
 async def require_team_member_from_task(
     membership: TeamMember = Depends(get_team_membership_from_task),
@@ -234,17 +239,16 @@ async def require_team_admin_from_task(
 
     return membership
 
+
 # ----------------------
 # SUPER USER DEPENDENCIES
 # ----------------------
 
-async def require_superuser(
-    user: User = Depends(get_current_active_user)
-):
+
+async def require_superuser(user: User = Depends(get_current_active_user)):
     if not user.is_superuser:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Superuser access required"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Superuser access required"
         )
-    
+
     return user
