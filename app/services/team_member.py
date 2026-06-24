@@ -22,7 +22,7 @@ async def add_team_member_service(
         user_id=user_id,
         team_id=team_id,
         role=role,
-        status="invited",
+        status="active",
     )
 
     if not member:

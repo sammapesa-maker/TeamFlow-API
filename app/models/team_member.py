@@ -13,8 +13,8 @@ class TeamMember(Base, TimestampMixin):
     team_id = Column(Integer, ForeignKey("teams.id"), nullable=False)
     role = Column(String(10), default="member", nullable=False)  # owner, admin, member
     status = Column(
-        String(10), default="invited", nullable=False
-    )  # invited, active, removed
+        String(10), default="active", nullable=False
+    )  # active, removed
 
     __table_args__ = (UniqueConstraint("user_id", "team_id", name="uq_user_team"),)
 

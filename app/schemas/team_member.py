@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 class TeamMemberBase(BaseModel):
     role: Literal["owner", "admin", "member"] = "member"
-    status: Literal["invited", "active", "removed"] = "invited"
+    status: Literal["active", "removed"] = "active"
 
 
 class TeamMemberCreate(TeamMemberBase):
@@ -16,7 +16,7 @@ class TeamMemberCreate(TeamMemberBase):
 
 class TeamMemberUpdate(BaseModel):
     role: Optional[Literal["owner", "admin", "member"]] = None
-    status: Optional[Literal["invited", "active", "removed"]] = None
+    status: Optional[Literal["active", "removed"]] = None
 
 
 class TeamMemberRead(TeamMemberBase):
@@ -37,7 +37,6 @@ class TeamMemberRoleEnum(str, Enum):
 
 
 class TeamMemberStatusEnum(str, Enum):
-    invited = "invited"
     active = "active"
     removed = "removed"
 

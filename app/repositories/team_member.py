@@ -55,7 +55,7 @@ async def create_team_member(
     user_id: int,
     team_id: int,
     role: str = "member",
-    status: str = "invited",
+    status: str = "active",
 ) -> Optional[TeamMember]:
     member = TeamMember(
         user_id=user_id,
