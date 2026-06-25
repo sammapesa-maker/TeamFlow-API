@@ -15,7 +15,7 @@ class TeamMemberCreate(TeamMemberBase):
 
 
 class TeamMemberUpdate(BaseModel):
-    role: Optional[Literal["owner", "admin", "member"]] = None
+    role: Optional[Literal["admin", "member"]] = None # owner is done in change ownership only
     status: Optional[Literal["active", "removed"]] = None
 
 
