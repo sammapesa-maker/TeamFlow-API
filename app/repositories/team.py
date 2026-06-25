@@ -87,6 +87,7 @@ async def update_team(
     team_id: int,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    owner_id: Optional[int] = None
 ):
     team = await get_team_by_id(db, team_id)
     if not team:
@@ -96,6 +97,8 @@ async def update_team(
         team.name = name
     if description is not None:
         team.description = description
+    if owner_id is not None:
+        team.owner_id = owner_id
 
     await db.commit()
     await db.refresh(team)

@@ -13,6 +13,7 @@ from app.repositories.team import (
     update_team,
 )
 from app.repositories.team_member import create_team_member
+from app.services.team_member import change_ownership
 from app.schemas.team import PaginatedTeamResponse, TeamQueryParams
 
 
@@ -28,12 +29,19 @@ async def create_team_service(
         raise HTTPException(status_code=400, detail="Team name already exists")
 
     team = await create_team(
-        db=db, name=name, owner_id=user.id, description=description  # ty:ignore[invalid-argument-type]
+        db=db,
+        name=name,
+        owner_id=user.id,  # ty:ignore[invalid-argument-type]
+        description=description,
     )
 
     # add initial member as owner
     await create_team_member(
-        db=db, user_id=user.id, team_id=team.id, role="owner", status="active"  # ty:ignore[invalid-argument-type]
+        db=db,
+        user_id=user.id,  # ty:ignore[invalid-argument-type]
+        team_id=team.id,
+        role="owner",
+        status="active",
     )
 
     return team
@@ -68,6 +76,14 @@ async def update_team_service(
     updated = await update_team(db, team_id, name=name, description=description)
 
     return updated
+
+
+async def transfer_ownership_service(db: AsyncSession, team_id: int, member_id: int):
+    # update team_membership
+    member = await change_ownership(db, member_id)
+
+    # update teams owner_id
+    return await update_team(db, team_id, owner_id=member.user_id)
 
 
 async def delete_team_service(db: AsyncSession, team_id: int):

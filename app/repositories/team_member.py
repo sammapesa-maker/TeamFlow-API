@@ -106,6 +106,16 @@ async def get_team_member(db: AsyncSession, user_id: int, team_id: int):
     return member.scalar_one_or_none()
 
 
+async def get_team_owner(db: AsyncSession, team_id: int):
+    owner = await db.execute(
+        select(TeamMember).where(
+            TeamMember.role == "owner",
+            TeamMember.team_id == team_id,
+        )
+    )
+    return owner.scalar_one_or_none()
+
+
 async def update_team_member(
     db: AsyncSession,
     member_id: int,
@@ -137,7 +147,7 @@ async def delete_team_member(db: AsyncSession, member_id: int) -> bool:
 
 
 async def remove_user_from_team(db: AsyncSession, user_id: int, team_id: int) -> bool:
-    member = await get_team_member(db, user_id, team_id)
+    member = await get_team_member(db, user_id=user_id, team_id=team_id)
     if not member:
         return False
 

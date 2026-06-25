@@ -7,6 +7,7 @@ from app.repositories.team_member import (
     get_team_member_by_id,
     get_team_members,
     update_team_member,
+    get_team_owner
 )
 from app.schemas.team_member import PaginatedTeamMemberResponse, TeamMemberQueryParams
 
@@ -91,6 +92,22 @@ async def update_team_member_service(
         role=role,
         status=status,
     )
+
+
+async def change_ownership(db: AsyncSession, member_id: int):
+    new_owner = await get_team_member_service(db,member_id)
+    old_owner = await get_team_owner(db, new_owner.team_id)
+    
+    if not old_owner:
+        raise HTTPException(status_code=404, detail="Team owner not found!")
+    
+    try:
+        await update_team_member(db, old_owner.id, role="member")
+        member = await update_team_member(db, new_owner.id, role="owner")
+        
+        return member
+    except Exception:
+        raise Exception("An error occurred while changing members roles")
 
 
 # -----------------------

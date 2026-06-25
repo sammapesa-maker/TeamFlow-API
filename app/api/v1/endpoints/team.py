@@ -25,6 +25,7 @@ from app.services.team import (
     get_team_service,
     get_teams_service,
     update_team_service,
+    transfer_ownership_service,
 )
 
 router = APIRouter(prefix="/my-teams", tags=["Teams"])
@@ -92,6 +93,11 @@ async def update_team(
         name=payload.name,
         description=payload.description,
     )
+
+
+@router.patch("/{team_id}/transfer-ownership", response_model=TeamRead, status_code=status.HTTP_200_OK)
+async def transfer_ownership(team_id: int, member_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_team_owner)):
+    return await transfer_ownership_service(db, team_id, member_id)
 
 
 # -----------------------
