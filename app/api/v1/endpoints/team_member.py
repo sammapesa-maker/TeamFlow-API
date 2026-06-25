@@ -22,9 +22,9 @@ from app.schemas.team_member import (
 )
 from app.services.team_member import (
     add_team_member_service,
+    delete_team_member_service,
     get_team_member_service,
     get_team_members_service,
-    remove_team_member_service,
     update_team_member_service,
 )
 
@@ -116,9 +116,9 @@ async def update_member(
 
 
 @router.delete("/team-member/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def remove_member(
+async def delete_member(
     member_id: int,
     db: AsyncSession = Depends(get_db),
     _: None = Depends(require_team_admin_from_member),
 ):
-    await remove_team_member_service(db, member_id)
+    await delete_team_member_service(db, member_id)

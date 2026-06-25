@@ -3,11 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.team_member import (
     create_team_member,
+    delete_team_member,
     get_team_member,
     get_team_member_by_id,
     get_team_members,
+    get_team_owner,
     update_team_member,
-    get_team_owner
 )
 from app.schemas.team_member import PaginatedTeamMemberResponse, TeamMemberQueryParams
 
@@ -95,16 +96,16 @@ async def update_team_member_service(
 
 
 async def change_ownership(db: AsyncSession, member_id: int):
-    new_owner = await get_team_member_service(db,member_id)
+    new_owner = await get_team_member_service(db, member_id)
     old_owner = await get_team_owner(db, new_owner.team_id)
-    
+
     if not old_owner:
         raise HTTPException(status_code=404, detail="Team owner not found!")
-    
+
     try:
         await update_team_member(db, old_owner.id, role="member")
         member = await update_team_member(db, new_owner.id, role="owner")
-        
+
         return member
     except Exception:
         raise Exception("An error occurred while changing members roles")
@@ -115,27 +116,10 @@ async def change_ownership(db: AsyncSession, member_id: int):
 # -----------------------
 
 
-async def remove_team_member_service(db: AsyncSession, member_id: int):
+async def delete_team_member_service(db: AsyncSession, member_id: int):
     member = await get_team_member_by_id(db, member_id)
 
     if not member:
         raise HTTPException(status_code=404, detail="Team member not found")
 
-    await update_team_member(
-        db,
-        member_id=member_id,
-        status="removed",
-    )
-
-
-async def remove_user_from_team_service(db: AsyncSession, user_id: int, team_id: int):
-    member = await get_team_member(db, user_id, team_id)
-
-    if not member:
-        raise HTTPException(status_code=404, detail="Membership not found")
-
-    return await update_team_member(
-        db,
-        member_id=member.id,
-        status="removed",
-    )
+    await delete_team_member(db, member)

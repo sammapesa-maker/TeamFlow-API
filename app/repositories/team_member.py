@@ -136,21 +136,6 @@ async def update_team_member(
     return member
 
 
-async def delete_team_member(db: AsyncSession, member_id: int) -> bool:
-    member = await get_team_member_by_id(db, member_id)
-    if not member:
-        return False
-
-    member.status = "removed"
+async def delete_team_member(db: AsyncSession, member: TeamMember):
+    await db.delete(member)
     await db.commit()
-    return True
-
-
-async def remove_user_from_team(db: AsyncSession, user_id: int, team_id: int) -> bool:
-    member = await get_team_member(db, user_id=user_id, team_id=team_id)
-    if not member:
-        return False
-
-    member.status = "removed"
-    await db.commit()
-    return True
