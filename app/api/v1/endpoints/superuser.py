@@ -32,7 +32,7 @@ from app.schemas.team_member import (
     TeamMemberSortField,
     TeamMemberStatusEnum,
 )
-from app.services.auth_service import get_user_profile, get_users_service
+from app.services.auth_service import get_user_profile, get_users_service, update_user_service
 from app.services.task import get_task_by_id, list_tasks_service
 from app.services.team import get_team_service, get_teams_service
 from app.services.team_member import get_team_member_service, get_team_members_service
@@ -142,6 +142,42 @@ async def get_user(
     user_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
 ):
     return await get_user_profile(db, user_id)
+
+
+@router.patch(
+    path="/users/{user_id}/activate", response_model=UserResponse, status_code=status.HTTP_200_OK
+)
+async def activate(
+    user_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
+):
+    return await update_user_service(db, user_id, is_active=True)
+
+
+@router.patch(
+    path="/users/{user_id}/deactivate", response_model=UserResponse, status_code=status.HTTP_200_OK
+)
+async def deactivate(
+    user_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
+):
+    return await update_user_service(db, user_id, is_active=False)
+
+
+@router.patch(
+    path="/users/{user_id}/promote", response_model=UserResponse, status_code=status.HTTP_200_OK
+)
+async def promote(
+    user_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
+):
+    return await update_user_service(db, user_id, is_superuser=True)
+
+
+@router.patch(
+    path="/users/{user_id}/demote", response_model=UserResponse, status_code=status.HTTP_200_OK
+)
+async def demote(
+    user_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
+):
+    return await update_user_service(db, user_id, is_superuser=False)
 
 
 @router.get(

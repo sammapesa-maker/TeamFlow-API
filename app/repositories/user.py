@@ -75,6 +75,8 @@ async def update_user(
     db: AsyncSession,
     username: Optional[str] = None,
     email: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    is_superuser: Optional[bool] = None,
 ) -> User:
     """
     Partial update of user fields
@@ -86,6 +88,12 @@ async def update_user(
 
     if email is not None:
         user.email = email
+
+    if is_active is not None:
+        user.is_active = is_active
+
+    if is_superuser is not None:
+        user.is_superuser = is_superuser
 
     await db.commit()
     await db.refresh(user)

@@ -219,3 +219,14 @@ async def get_users_service(
     return PaginatedUserResponse(
         total=total, limit=query.limit, offset=query.offset, items=results
     )
+
+
+async def update_user_service(
+    db: AsyncSession,
+    user_id: int,
+    is_active: bool | None = None,
+    is_superuser: bool | None = None,
+):
+    return await update_user(
+        user_id=user_id, db=db, is_active=is_active, is_superuser=is_superuser
+    )
