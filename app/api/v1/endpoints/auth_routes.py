@@ -18,8 +18,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication & Users"])
 async def register_user(
     user_data: auth_schemas.UserRegister, db: AsyncSession = Depends(get_db)
 ):
-    user = await auth_service.register_user(db=db, user_data=user_data)
-    return user
+    return await auth_service.register_user(db=db, user_data=user_data)
 
 
 @router.post(
@@ -68,8 +67,7 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_active_user),
 ):
-    return await auth_service.change_password(data=data, db=db, user_id=user.id)  # ty:ignore[invalid-argument-type]
-
+    return await auth_service.change_password(data=data, db=db, user=user)
 
 @router.get(
     path="/me", response_model=auth_schemas.UserResponse, status_code=status.HTTP_200_OK

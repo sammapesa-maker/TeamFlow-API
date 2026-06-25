@@ -39,9 +39,17 @@ from app.services.auth_service import (
     get_users_service,
     update_user_service,
 )
-from app.services.task import get_task_by_id, list_tasks_service
-from app.services.team import get_team_service, get_teams_service
-from app.services.team_member import get_team_member_service, get_team_members_service
+from app.services.task import (
+    delete_task_service,
+    get_task_service,
+    list_tasks_service,
+)
+from app.services.team import delete_team_service, get_team_service, get_teams_service
+from app.services.team_member import (
+    delete_team_member_service,
+    get_team_member_service,
+    get_team_members_service,
+)
 
 router = APIRouter(prefix="/admin", tags=["SuperUser"])
 
@@ -151,7 +159,9 @@ async def get_user(
 
 
 @router.patch(
-    path="/users/{user_id}/activate", response_model=UserResponse, status_code=status.HTTP_200_OK
+    path="/users/{user_id}/activate",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def activate(
     user_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
@@ -160,7 +170,9 @@ async def activate(
 
 
 @router.patch(
-    path="/users/{user_id}/deactivate", response_model=UserResponse, status_code=status.HTTP_200_OK
+    path="/users/{user_id}/deactivate",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def deactivate(
     user_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
@@ -169,7 +181,9 @@ async def deactivate(
 
 
 @router.patch(
-    path="/users/{user_id}/promote", response_model=UserResponse, status_code=status.HTTP_200_OK
+    path="/users/{user_id}/promote",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def promote(
     user_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
@@ -178,7 +192,9 @@ async def promote(
 
 
 @router.patch(
-    path="/users/{user_id}/demote", response_model=UserResponse, status_code=status.HTTP_200_OK
+    path="/users/{user_id}/demote",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def demote(
     user_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
@@ -187,7 +203,8 @@ async def demote(
 
 
 @router.delete(
-    path="/users/{user_id}", response_model=PaginatedUserResponse, status_code=status.HTTP_204_NO_CONTENT
+    path="/users/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_user(
     user_id: int,
@@ -218,6 +235,16 @@ async def get_team(
     return await get_team_service(db, team_id)
 
 
+@router.delete(
+    path="/teams/{team_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_team(
+    team_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
+):
+    await delete_team_service(db, team_id)
+
+
 @router.get(
     path="/members",
     response_model=PaginatedTeamMemberResponse,
@@ -242,6 +269,16 @@ async def get_member(
     return await get_team_member_service(db, member_id)
 
 
+@router.delete(
+    path="/members/{member_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_member(
+    member_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
+):
+    return await delete_team_member_service(db, member_id)
+
+
 @router.get(
     path="/tasks", response_model=PaginatedTaskResponse, status_code=status.HTTP_200_OK
 )
@@ -259,4 +296,13 @@ async def get_all_tasks(
 async def get_task(
     task_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
 ):
-    return await get_task_by_id(db, task_id)
+    return await get_task_service(db, task_id)
+
+
+@router.delete(
+    path="/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_task(
+    task_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
+):
+    return await delete_task_service(db, task_id)

@@ -186,22 +186,21 @@ async def update_profile(data: UserUpdate, user: User, db: AsyncSession):
     )
 
 
-async def change_password(data: ChangePassword, db: AsyncSession, user_id: int):
+async def change_password(data: ChangePassword, db: AsyncSession, user: User):
     old_password = data.current_password.get_secret_value()
     new_password = data.new_password.get_secret_value()
-
-    user = await get_user_by_id(user_id, db)
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if not verify_password(old_password, user.hashed_password):
+    if not verify_password(
+        plain_password=old_password,
+        hashed_password=user.hashed_password,  # ty:ignore[invalid-argument-type]
+    ):
         raise HTTPException(status_code=400, detail="Incorrect password")
 
     hashed = hash_password(new_password)
-
     user = await update_user_password(user, hashed, db)
-
     if user:
         return {"message": "Password updated successfully", "user_id": user.id}
 
