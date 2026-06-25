@@ -32,7 +32,13 @@ from app.schemas.team_member import (
     TeamMemberSortField,
     TeamMemberStatusEnum,
 )
-from app.services.auth_service import get_user_profile, get_users_service, update_user_service
+from app.services.auth_service import (
+    delete_user_service,
+    get_user_by_id_service,
+    get_user_profile,
+    get_users_service,
+    update_user_service,
+)
 from app.services.task import get_task_by_id, list_tasks_service
 from app.services.team import get_team_service, get_teams_service
 from app.services.team_member import get_team_member_service, get_team_members_service
@@ -178,6 +184,18 @@ async def demote(
     user_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_superuser)
 ):
     return await update_user_service(db, user_id, is_superuser=False)
+
+
+@router.delete(
+    path="/users/{user_id}", response_model=PaginatedUserResponse, status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    _=Depends(require_superuser),
+):
+    user = await get_user_by_id_service(db, user_id)
+    await delete_user_service(user, db)
 
 
 @router.get(

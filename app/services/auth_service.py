@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError, jwt
-from pydantic import SecretStr
+from pydantic import EmailStr, SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -207,8 +207,7 @@ async def change_password(data: ChangePassword, db: AsyncSession, user_id: int):
 
 
 async def delete_user_service(user: User, db: AsyncSession):
-    user_id: int = user.id  # ty:ignore[invalid-assignment]
-    await delete_user(user_id=user_id, db=db)
+    await delete_user(user=user, db=db)
 
 
 async def get_users_service(
@@ -230,3 +229,11 @@ async def update_user_service(
     return await update_user(
         user_id=user_id, db=db, is_active=is_active, is_superuser=is_superuser
     )
+
+
+async def get_user_by_id_service(db: AsyncSession, user_id: int):
+    return await get_user_by_id(user_id, db)
+
+
+async def get_user_by_email_service(db: AsyncSession, email: EmailStr):
+    return await get_user_by_email(email, db)

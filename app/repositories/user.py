@@ -118,8 +118,7 @@ async def activate_user(db: AsyncSession, user_id: int) -> User:
     return user
 
 
-async def delete_user(user_id: int, db: AsyncSession) -> None:
-    user = await get_user_by_id(user_id, db)
+async def delete_user(user: User, db: AsyncSession):
     await db.delete(user)
     await db.commit()
 
