@@ -85,4 +85,4 @@ async def delete_task_service(db: AsyncSession, task_id: int):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    await delete_task(db, task_id)
+    await delete_task(db, task)

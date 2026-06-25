@@ -130,10 +130,6 @@ async def update_task(
     return task
 
 
-async def delete_task(db: AsyncSession, task_id: int):
-    task = await get_task_by_id(db, task_id)
-    if not task:
-        return False
-
+async def delete_task(db: AsyncSession, task: Task):
     await db.delete(task)
     await db.commit()
