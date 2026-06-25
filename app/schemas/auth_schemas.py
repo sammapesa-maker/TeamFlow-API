@@ -1,8 +1,9 @@
 from datetime import datetime
 from enum import Enum
 from typing import Optional
+import re
 
-from pydantic import BaseModel, EmailStr, Field, SecretStr
+from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
 
 # -------------------------
 # AUTH SCHEMAS
@@ -13,6 +14,37 @@ class UserRegister(BaseModel):
     username: str
     email: EmailStr
     password: SecretStr
+    
+    # Username validation
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value):
+        if len(value) < 3 or len(value) > 20:
+            raise ValueError("Username must be between 3 and 20 characters")
+        if not value.isalnum():
+            raise ValueError("Username must be alphanumeric")
+        return value
+
+    # Password validation
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value):
+        if len(value) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+
+        if not re.search(r"[A-Z]", value):
+            raise ValueError("Password must contain at least one uppercase letter")
+
+        if not re.search(r"[a-z]", value):
+            raise ValueError("Password must contain at least one lowercase letter")
+
+        if not re.search(r"[0-9]", value):
+            raise ValueError("Password must contain at least one digit")
+
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", value):
+            raise ValueError("Password must contain at least one special character")
+
+        return value
 
 
 class UserLogin(BaseModel):
