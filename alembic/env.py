@@ -1,4 +1,5 @@
 from logging.config import fileConfig
+import os
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -6,15 +7,18 @@ from sqlalchemy import pool
 from alembic import context
 
 from app.core.database import Base
-from app.models.user import User
-from app.models.token import RefreshToken
-from app.models.task import Task
-from app.models.team import Team
-from app.models.team_member import TeamMember
+from app.models.user import User  # noqa: F401
+from app.models.token import RefreshToken  # noqa: F401
+from app.models.task import Task  # noqa: F401
+from app.models.team import Team  # noqa: F401
+from app.models.team_member import TeamMember  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+sync_url = os.getenv("ALEMBIC_DATABASE_URL")
+config.set_main_option("sqlalchemy.url", sync_url)  # ty:ignore[invalid-argument-type]
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

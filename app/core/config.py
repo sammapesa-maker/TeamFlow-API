@@ -5,6 +5,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     # Database
     DATABASE_URL: str
+    ALEMBIC_DATABASE_URL: str
 
     # JWT Settings
     SECRET_KEY: str
